@@ -1,6 +1,6 @@
 use phyzzy_rs::{self, Boundary, Mass, Model, Spring, V2D, World, WorldConfig};
 use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
@@ -13,13 +13,16 @@ let mut phz = PhyzzySimulator::new(60.0_f64.recip(), 100.0, &V2D::new(500.0, 500
     phz.model.new_mass(Mass::new(0.16, 0.08, &V2D::new(2.0, 1.0)));
     phz.model.new_mass(Mass::new(0.16, 0.08, &V2D::new(2.0, 1.0)));
     phz.model.new_mass(Mass::new(0.16, 0.08, &V2D::new(2.0, 10.0)));
+    // Build a box with 1st 4 masses.
     let _ = phz.model.new_spring(Spring::new(1.0, 10.0, 1.5, 0, 1));
     let _ = phz.model.new_spring(Spring::new(1.0, 10.0, 1.5, 1, 2));
     let _ = phz.model.new_spring(Spring::new(1.0, 10.0, 1.5, 2, 3));
     let _ = phz.model.new_spring(Spring::new(1.0, 10.0, 1.5, 0, 3));
     let _ = phz.model.new_spring(Spring::new(2.0_f64.sqrt(), 10.0, 1.5, 1, 3));
     let _ = phz.model.new_spring(Spring::new(2.0_f64.sqrt(), 10.0, 1.5, 0, 2));
-    phz.world.bounds.push(Boundary::new(V2D::new(0.0, 0.1), V2D::new(-0.1, 0.5), 0.8, 0.6, 0.8 )); // ground
+
+    // Boundaries as screen edges.
+    phz.world.bounds.push(Boundary::new(V2D::new(0.0, 0.0), V2D::new(-1.0, 5.0), 0.8, 0.6, 0.8 )); // ground
     phz.world.bounds.push(Boundary::new(V2D::new(0.0, 0.0), V2D::new(1.0, 0.0), 0.8, 0.6, 0.8 )); // left wall
     phz.world.bounds.push(Boundary::new(V2D::new(phz.view_sz.x / phz.scaling, 0.0), V2D::new(-1.0, 0.0), 0.8, 0.6, 0.8 )); // right wall
 
@@ -105,7 +108,10 @@ impl PhyzzyApp {
 
 
 impl eframe::App for PhyzzyApp {
-    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        egui::Panel::left("Sim controls").resizable(true).show_inside(ui, |ui| {
+            ui.heading("sim controls");
+        });
         egui::CentralPanel::default().show_inside(ui, |ui| {
             let size_v = Vec2::new(self.phz.view_sz.x as f32, self.phz.view_sz.y as f32);
             let (response, painter) = ui.allocate_painter(size_v, Sense::hover());
