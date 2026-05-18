@@ -12,6 +12,19 @@ fn main() {
     let model_json = fs::read_to_string("triangle.json");
     let model_proto = json::parse(&model_json.unwrap()).unwrap();
 
+    println!("Boundaries!");
+    for bound in model_proto["world"]["bounds"].members() {
+        println!("{:?}", bound);
+
+        let b_pos = V2D::new(bound["pos"]["x"].as_f64().unwrap(), bound["pos"]["y"].as_f64().unwrap());
+        let b_nrm = V2D::new(bound["nrm"]["x"].as_f64().unwrap(), bound["nrm"]["y"].as_f64().unwrap());
+        let b_refl = bound["refl"].as_f64().unwrap();
+        let b_mus = bound["mu_s"].as_f64().unwrap();
+        let b_muk = bound["mu_k"].as_f64().unwrap();
+
+        phz.world.bounds.push(Boundary::new(b_pos, b_nrm, b_refl, b_mus, b_muk));
+    }
+
     println!("Masses!");
     for mass in model_proto["model"]["masses"].members() {
         println!("{:?}", mass);
@@ -37,18 +50,6 @@ fn main() {
         let _ = phz.model.new_spring(Spring::new(s_rest, s_spring, s_dampen, s_ma, s_mb));
     }
 
-    println!("Boundaries!");
-    for bound in model_proto["world"]["bounds"].members() {
-        println!("{:?}", bound);
-
-        let b_pos = V2D::new(bound["pos"]["x"].as_f64().unwrap(), bound["pos"]["y"].as_f64().unwrap());
-        let b_nrm = V2D::new(bound["nrm"]["x"].as_f64().unwrap(), bound["nrm"]["y"].as_f64().unwrap());
-        let b_refl = bound["refl"].as_f64().unwrap();
-        let b_mus = bound["mu_s"].as_f64().unwrap();
-        let b_muk = bound["mu_k"].as_f64().unwrap();
-
-        phz.world.bounds.push(Boundary::new(b_pos, b_nrm, b_refl, b_mus, b_muk));
-    }
 
     // run the model
     let _ = eframe::run_native("Phyzzy", native_options, Box::new(|cc| Ok(Box::new(PhyzzyApp::new(cc, phz)))));
