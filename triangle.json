@@ -29,22 +29,22 @@
         "springs": [
             {
                 "restlength": 1.0,
-                "springing": 20.0,
-                "dampening": 2.0,
+                "springing": 50.0,
+                "dampening": 5.0,
                 "m_a": 0,
                 "m_b": 1
             },
             {
                 "restlength": 1.0,
-                "springing": 20.0,
-                "dampening": 2.0,
+                "springing": 50.0,
+                "dampening": 5.0,
                 "m_a": 1,
                 "m_b": 2
             },
             {
                 "restlength": 1.0,
-                "springing": 20.0,
-                "dampening": 2.0,
+                "springing": 50.0,
+                "dampening": 5.0,
                 "m_a": 2,
                 "m_b": 0
             }
