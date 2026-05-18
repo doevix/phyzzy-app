@@ -1,0 +1,68 @@
+{
+    "meta": {
+        "name": "triangle",
+        "creator": "doevix",
+        "created": "2026-16-05"
+    },
+    "model": {
+        "dt": 0.0166,
+        "masses": [
+            {
+                "mass": 0.8,
+                "radius": 0.05,
+                "p_i": { "x": 1.0, "y": 1.0 },
+                "p_o": { "x": 1.0, "y": 1.0 }
+            },
+            {
+                "mass": 0.8,
+                "radius": 0.05,
+                "p_i": { "x": 2.0, "y": 1.0 },
+                "p_o": { "x": 2.0, "y": 1.0 }
+            },
+            {
+                "mass": 0.8,
+                "radius": 0.05,
+                "p_i": { "x": 1.5, "y": 1.866 },
+                "p_o": { "x": 1.5, "y": 1.866 }
+            }
+        ],
+        "springs": [
+            {
+                "restlength": 1.0,
+                "springing": 10.0,
+                "dampening": 10.0,
+                "m_a": 0,
+                "m_b": 1
+            },
+            {
+                "restlength": 1.0,
+                "springing": 10.0,
+                "dampening": 10.0,
+                "m_a": 1,
+                "m_b": 2
+            },
+            {
+                "restlength": 1.0,
+                "springing": 10.0,
+                "dampening": 10.0,
+                "m_a": 2,
+                "m_b": 0
+            }
+        ]
+    },
+    "world": {
+        "bounds": [
+            {
+                "pos": { "x": 0.0, "y": 0.0 },
+                "nrm": { "x": 0.0, "y": 1.0 },
+                "refl": 0.8,
+                "mu_s": 0.8,
+                "mu_k": 0.6
+            }
+        ]
+    },
+    "world_config": {
+        "gravity": { "x": 0.0, "y": -9.81 },
+        "drag": 0.1
+    }
+}

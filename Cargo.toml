@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 phyzzy-rs = {path = "../phyzzy-rs"}
 eframe = "0.34.2"
+json = "0.12.4"

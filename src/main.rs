@@ -1,30 +1,16 @@
 use phyzzy_rs::{self, Boundary, Mass, Model, Spring, V2D, World, WorldConfig};
 use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter};
+use std::{fs, io};
 use std::time::Instant;
+use json::{self, JsonValue};
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-let mut phz = PhyzzySimulator::new(60.0_f64.recip(), 100.0, &V2D::new(500.0, 500.0));
+    let mut phz = PhyzzySimulator::new(60.0_f64.recip(), 100.0, &V2D::new(500.0, 500.0));
 
-    // build the model
-    phz.model.new_mass(Mass::new(0.16, 0.08, &V2D::new(1.0, 1.0)));
-    phz.model.new_mass(Mass::new(0.16, 0.08, &V2D::new(1.0, 2.0)));
-    phz.model.new_mass(Mass::new(0.16, 0.08, &V2D::new(2.0, 2.0)));
-    phz.model.new_mass(Mass::new(0.16, 0.08, &V2D::new(2.0, 1.0)));
-    phz.model.new_mass(Mass::new(0.16, 0.08, &V2D::new(2.0, 1.0)));
-    phz.model.new_mass(Mass::new(0.16, 0.08, &V2D::new(2.0, 10.0)));
-    // Build a box with 1st 4 masses.
-    let _ = phz.model.new_spring(Spring::new(1.0, 10.0, 1.5, 0, 1));
-    let _ = phz.model.new_spring(Spring::new(1.0, 10.0, 1.5, 1, 2));
-    let _ = phz.model.new_spring(Spring::new(1.0, 10.0, 1.5, 2, 3));
-    let _ = phz.model.new_spring(Spring::new(1.0, 10.0, 1.5, 0, 3));
-    let _ = phz.model.new_spring(Spring::new(2.0_f64.sqrt(), 10.0, 1.5, 1, 3));
-    let _ = phz.model.new_spring(Spring::new(2.0_f64.sqrt(), 10.0, 1.5, 0, 2));
-
-    // Boundaries as screen edges.
-    phz.world.bounds.push(Boundary::new(V2D::new(0.0, 0.0), V2D::new(-1.0, 5.0), 0.8, 0.6, 0.8 )); // ground
-    phz.world.bounds.push(Boundary::new(V2D::new(0.0, 0.0), V2D::new(1.0, 0.0), 0.8, 0.6, 0.8 )); // left wall
-    phz.world.bounds.push(Boundary::new(V2D::new(phz.view_sz.x / phz.scaling, 0.0), V2D::new(-1.0, 0.0), 0.8, 0.6, 0.8 )); // right wall
+    let model_json = fs::read_to_string("triangle.json");
+    let model_proto = json::parse(&model_json.unwrap());
+    println!("{:?}", model_proto);
 
     // run the model
     let _ = eframe::run_native("Phyzzy", native_options, Box::new(|cc| Ok(Box::new(PhyzzyApp::new(cc, phz)))));
@@ -120,19 +106,17 @@ impl eframe::App for PhyzzyApp {
             let stroke = Stroke::new(1.0, color);
 
             // Get boundary points.
-            let left_side_x = 0.0;
-            let right_side_x = self.phz.view_sz.x / self.phz.scaling;
-            let bound_nrm = self.phz.world.bounds[0].nrm;
-            let mb = -bound_nrm.x / bound_nrm.y;
-            let pos_b = self.phz.world.bounds[0].pos;
-            let y1 = pos_b.y - mb * (pos_b.x - left_side_x);
-            let y2 = pos_b.y - mb * (pos_b.x - right_side_x);
-            let p_1 = self.phz.world_to_panel(&V2D::new(left_side_x, y1));
-            let p_2 = self.phz.world_to_panel(&V2D::new(right_side_x, y2));
-
-
+            // let left_side_x = 0.0;
+            // let right_side_x = self.phz.view_sz.x / self.phz.scaling;
+            // let bound_nrm = self.phz.world.bounds[0].nrm;
+            // let mb = -bound_nrm.x / bound_nrm.y;
+            // let pos_b = self.phz.world.bounds[0].pos;
+            // let y1 = pos_b.y - mb * (pos_b.x - left_side_x);
+            // let y2 = pos_b.y - mb * (pos_b.x - right_side_x);
+            // let p_1 = self.phz.world_to_panel(&V2D::new(left_side_x, y1));
+            // let p_2 = self.phz.world_to_panel(&V2D::new(right_side_x, y2));
             // Draw boundary.
-            painter.line_segment([p_1, p_2], stroke);
+            // painter.line_segment([p_1, p_2], stroke);
 
             // Draw model.
             ui.request_repaint();
