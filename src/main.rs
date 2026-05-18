@@ -11,24 +11,8 @@ fn main() {
     // Super crude model loader, make it better later.
     let model_json = fs::read_to_string("triangle.json");
     let model_proto = json::parse(&model_json.unwrap()).unwrap();
-
-    println!("Boundaries!");
-    for bound in model_proto["world"]["bounds"].members() {
-        println!("{:?}", bound);
-
-        let b_pos = V2D::new(bound["pos"]["x"].as_f64().unwrap(), bound["pos"]["y"].as_f64().unwrap());
-        let b_nrm = V2D::new(bound["nrm"]["x"].as_f64().unwrap(), bound["nrm"]["y"].as_f64().unwrap());
-        let b_refl = bound["refl"].as_f64().unwrap();
-        let b_mus = bound["mu_s"].as_f64().unwrap();
-        let b_muk = bound["mu_k"].as_f64().unwrap();
-
-        phz.world.bounds.push(Boundary::new(b_pos, b_nrm, b_refl, b_mus, b_muk));
-    }
-
-    println!("Masses!");
+    // Load masses
     for mass in model_proto["model"]["masses"].members() {
-        println!("{:?}", mass);
-
         let m_mass = mass["mass"].as_f64().unwrap();
         let m_rad = mass["radius"].as_f64().unwrap();
         let m_pi = V2D::new(mass["p_i"]["x"].as_f64().unwrap(), mass["p_i"]["y"].as_f64().unwrap());
@@ -36,11 +20,8 @@ fn main() {
 
         phz.model.new_mass(Mass::load(m_mass, m_rad, &m_pi, &m_po));
     }
-
-    println!("Springs!");
+    // Load springs
     for spring in model_proto["model"]["springs"].members() {
-        println!("{:?}", spring);
-
         let s_rest = spring["restlength"].as_f64().unwrap();
         let s_spring = spring["springing"].as_f64().unwrap();
         let s_dampen = spring["dampening"].as_f64().unwrap();
@@ -49,7 +30,16 @@ fn main() {
 
         let _ = phz.model.new_spring(Spring::new(s_rest, s_spring, s_dampen, s_ma, s_mb));
     }
+    // Load bounds
+    for bound in model_proto["world"]["bounds"].members() {
+        let b_pos = V2D::new(bound["pos"]["x"].as_f64().unwrap(), bound["pos"]["y"].as_f64().unwrap());
+        let b_nrm = V2D::new(bound["nrm"]["x"].as_f64().unwrap(), bound["nrm"]["y"].as_f64().unwrap());
+        let b_refl = bound["refl"].as_f64().unwrap();
+        let b_mus = bound["mu_s"].as_f64().unwrap();
+        let b_muk = bound["mu_k"].as_f64().unwrap();
 
+        phz.world.bounds.push(Boundary::new(b_pos, b_nrm, b_refl, b_mus, b_muk));
+    }
 
     // run the model
     let _ = eframe::run_native("Phyzzy", native_options, Box::new(|cc| Ok(Box::new(PhyzzyApp::new(cc, phz)))));
