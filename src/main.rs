@@ -16,13 +16,14 @@ fn main() {
     phz.dt = model_proto["model"]["dt"].as_f64().unwrap();
 
     // Load masses
-    for mass in model_proto["model"]["masses"].members() {
+    for (i, mass) in model_proto["model"]["masses"].members().enumerate() {
         let m_mass = mass["mass"].as_f64().unwrap();
         let m_rad = mass["radius"].as_f64().unwrap();
-        let m_pi = V2D::new(mass["p_i"]["x"].as_f64().unwrap(), mass["p_i"]["y"].as_f64().unwrap());
-        let m_po = V2D::new(mass["p_o"]["x"].as_f64().unwrap(), mass["p_o"]["y"].as_f64().unwrap());
+        let m_pos = V2D::new(mass["pos"]["x"].as_f64().unwrap(), mass["pos"]["y"].as_f64().unwrap());
+        let m_vel = V2D::new(mass["vel"]["x"].as_f64().unwrap(), mass["vel"]["y"].as_f64().unwrap());
 
-        phz.model.new_mass(Mass::load(m_mass, m_rad, &m_pi, &m_po));
+        phz.model.new_mass(Mass::new(m_mass, m_rad, &m_pos));
+        phz.model.get_mass(i).set_vel(m_vel, phz.dt);
     }
     // Load springs
     for spring in model_proto["model"]["springs"].members() {
