@@ -8,9 +8,47 @@ fn main() {
     let native_options = eframe::NativeOptions::default();
     let mut phz = PhyzzySimulator::new(60.0_f64.recip(), 100.0, &V2D::new(500.0, 500.0));
 
+    // Super crude model loader, make it better later.
     let model_json = fs::read_to_string("triangle.json");
-    let model_proto = json::parse(&model_json.unwrap());
-    println!("{:?}", model_proto);
+    let model_proto = json::parse(&model_json.unwrap()).unwrap();
+
+    println!("Masses!");
+    for mass in model_proto["model"]["masses"].members() {
+        println!("{:?}", mass);
+
+        let m_mass = mass["mass"].as_f64().unwrap();
+        let m_rad = mass["radius"].as_f64().unwrap();
+        let m_pi = V2D::new(mass["p_i"]["x"].as_f64().unwrap(), mass["p_i"]["y"].as_f64().unwrap());
+        let m_po = V2D::new(mass["p_o"]["x"].as_f64().unwrap(), mass["p_o"]["y"].as_f64().unwrap());
+
+        phz.model.new_mass(Mass::load(m_mass, m_rad, &m_pi, &m_po));
+    }
+
+    println!("Springs!");
+    for spring in model_proto["model"]["springs"].members() {
+        println!("{:?}", spring);
+
+        let s_rest = spring["restlength"].as_f64().unwrap();
+        let s_spring = spring["springing"].as_f64().unwrap();
+        let s_dampen = spring["dampening"].as_f64().unwrap();
+        let s_ma = spring["m_a"].as_usize().unwrap();
+        let s_mb = spring["m_b"].as_usize().unwrap();
+
+        let _ = phz.model.new_spring(Spring::new(s_rest, s_spring, s_dampen, s_ma, s_mb));
+    }
+
+    println!("Boundaries!");
+    for bound in model_proto["world"]["bounds"].members() {
+        println!("{:?}", bound);
+
+        let b_pos = V2D::new(bound["pos"]["x"].as_f64().unwrap(), bound["pos"]["y"].as_f64().unwrap());
+        let b_nrm = V2D::new(bound["nrm"]["x"].as_f64().unwrap(), bound["nrm"]["y"].as_f64().unwrap());
+        let b_refl = bound["refl"].as_f64().unwrap();
+        let b_mus = bound["mu_s"].as_f64().unwrap();
+        let b_muk = bound["mu_k"].as_f64().unwrap();
+
+        phz.world.bounds.push(Boundary::new(b_pos, b_nrm, b_refl, b_mus, b_muk));
+    }
 
     // run the model
     let _ = eframe::run_native("Phyzzy", native_options, Box::new(|cc| Ok(Box::new(PhyzzyApp::new(cc, phz)))));
@@ -106,17 +144,17 @@ impl eframe::App for PhyzzyApp {
             let stroke = Stroke::new(1.0, color);
 
             // Get boundary points.
-            // let left_side_x = 0.0;
-            // let right_side_x = self.phz.view_sz.x / self.phz.scaling;
-            // let bound_nrm = self.phz.world.bounds[0].nrm;
-            // let mb = -bound_nrm.x / bound_nrm.y;
-            // let pos_b = self.phz.world.bounds[0].pos;
-            // let y1 = pos_b.y - mb * (pos_b.x - left_side_x);
-            // let y2 = pos_b.y - mb * (pos_b.x - right_side_x);
-            // let p_1 = self.phz.world_to_panel(&V2D::new(left_side_x, y1));
-            // let p_2 = self.phz.world_to_panel(&V2D::new(right_side_x, y2));
+            let left_side_x = 0.0;
+            let right_side_x = self.phz.view_sz.x / self.phz.scaling;
+            let bound_nrm = self.phz.world.bounds[0].nrm;
+            let mb = -bound_nrm.x / bound_nrm.y;
+            let pos_b = self.phz.world.bounds[0].pos;
+            let y1 = pos_b.y - mb * (pos_b.x - left_side_x);
+            let y2 = pos_b.y - mb * (pos_b.x - right_side_x);
+            let p_1 = self.phz.world_to_panel(&V2D::new(left_side_x, y1));
+            let p_2 = self.phz.world_to_panel(&V2D::new(right_side_x, y2));
             // Draw boundary.
-            // painter.line_segment([p_1, p_2], stroke);
+            painter.line_segment([p_1, p_2], stroke);
 
             // Draw model.
             ui.request_repaint();
