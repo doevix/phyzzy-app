@@ -134,9 +134,12 @@ impl eframe::App for PhyzzyApp {
             // Draw boundary.
             painter.line_segment([p_1, p_2], stroke);
 
+            // Draw model.
             ui.request_repaint();
-            self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg);
             self.phz.draw_model(&painter);
+
+            // Update for next frame.
+            self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg);
 
             let t_elapsed = self.phz.t_now.elapsed();
             self.phz.dt = t_elapsed.as_secs_f64();
