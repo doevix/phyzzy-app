@@ -11,6 +11,10 @@ fn main() {
     // Super crude model loader, make it better later.
     let model_json = fs::read_to_string("triangle.json");
     let model_proto = json::parse(&model_json.unwrap()).unwrap();
+
+    // Load dt
+    phz.dt = model_proto["model"]["dt"].as_f64().unwrap();
+
     // Load masses
     for mass in model_proto["model"]["masses"].members() {
         let m_mass = mass["mass"].as_f64().unwrap();
