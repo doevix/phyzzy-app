@@ -1,8 +1,8 @@
 use phyzzy_rs::{self, Boundary, Mass, Model, Spring, V2D, World, WorldConfig};
 use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter};
-use std::{fs, io};
+use std::fs;
 use std::time::Instant;
-use json::{self, JsonValue};
+use json;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
