@@ -108,9 +108,9 @@ impl PhyzzySimulator {
         }
     }
 
-    fn draw_world(&self, painter: &Painter, world: &World) {
+    fn _draw_world(&self, _painter: &Painter, _world: &World) {
         let color = Color32::from_gray(128);
-        let stroke = Stroke::new(1.0, color);
+        let _stroke = Stroke::new(1.0, color);
 
 
     }
@@ -123,7 +123,7 @@ struct PhyzzyApp {
 
 
 impl PhyzzyApp {
-    fn new(cc: &eframe::CreationContext<'_>, phz: PhyzzySimulator) -> Self {
+    fn new(_cc: &eframe::CreationContext<'_>, phz: PhyzzySimulator) -> Self {
         Self {
             phz,
         }
