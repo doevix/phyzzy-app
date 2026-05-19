@@ -2327,6 +2327,7 @@ name = "phyzzy-rs"
 version = "0.1.0"
 dependencies = [
  "approx",
+ "serde",
 ]
 
 [[package]]
