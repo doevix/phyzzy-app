@@ -13,14 +13,14 @@ fn main() {
     let model_proto = json::parse(&model_json.unwrap()).unwrap();
 
     // Load masses
-    for (i, mass) in model_proto["model"]["masses"].members().enumerate() {
+    for (idx, mass) in model_proto["model"]["masses"].members().enumerate() {
         let m_mass = mass["mass"].as_f64().unwrap();
         let m_rad = mass["radius"].as_f64().unwrap();
         let m_pos = V2D::new(mass["pos"]["x"].as_f64().unwrap(), mass["pos"]["y"].as_f64().unwrap());
         let m_vel = V2D::new(mass["vel"]["x"].as_f64().unwrap(), mass["vel"]["y"].as_f64().unwrap());
 
         phz.model.new_mass(Mass::new(m_mass, m_rad, &m_pos));
-        phz.model.get_mass(i).set_vel(m_vel, phz.dt);
+        phz.model.set_mass_vel(idx, m_vel, phz.dt);
     }
     // Load springs
     for spring in model_proto["model"]["springs"].members() {
@@ -32,6 +32,13 @@ fn main() {
 
         let _ = phz.model.new_spring(Spring::new(s_rest, s_spring, s_dampen, s_ma, s_mb));
     }
+
+    // Load world config
+    let w_gravity = V2D::new(model_proto["world_config"]["gravity"]["x"].as_f64().unwrap(), model_proto["world_config"]["gravity"]["y"].as_f64().unwrap());
+    let w_drag = model_proto["world_config"]["drag"].as_f64().unwrap();
+    phz.world_cfg.gravity = w_gravity;
+    phz.world_cfg.drag = w_drag;
+
     // Load bounds
     for bound in model_proto["world"]["bounds"].members() {
         let b_pos = V2D::new(bound["pos"]["x"].as_f64().unwrap(), bound["pos"]["y"].as_f64().unwrap());
