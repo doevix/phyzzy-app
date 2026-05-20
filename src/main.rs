@@ -1,56 +1,47 @@
-use phyzzy_rs::{self, Boundary, Mass, Model, Spring, V2D, World, WorldConfig};
+use phyzzy_rs::{self, Boundary, Mass, Model, Spring, V2D, World, WorldConfig, Loader};
 use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter};
 use std::fs;
 use std::time::Instant;
-use json;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
     let mut phz = PhyzzySimulator::new(60.0_f64.recip(), 100.0, &V2D::new(500.0, 500.0));
 
     // Super crude model loader, make it better later.
-    let model_json = fs::read_to_string("triangle.json");
-    let model_proto = json::parse(&model_json.unwrap()).unwrap();
+    let model_json = fs::read_to_string("triangle.json").unwrap();
+    let model_proto = Loader::load_from_json_str(&model_json);
 
-    // Load masses
-    for (idx, mass) in model_proto["model"]["masses"].members().enumerate() {
-        let m_mass = mass["mass"].as_f64().unwrap();
-        let m_rad = mass["radius"].as_f64().unwrap();
-        let m_pos = V2D::new(mass["pos"]["x"].as_f64().unwrap(), mass["pos"]["y"].as_f64().unwrap());
-        let m_vel = V2D::new(mass["vel"]["x"].as_f64().unwrap(), mass["vel"]["y"].as_f64().unwrap());
+    match model_proto {
+        Ok(loaded_model) => {
+            println!("{:?}", loaded_model);
 
-        phz.model.new_mass(Mass::new(m_mass, m_rad, &m_pos));
-        phz.model.set_mass_vel(idx, m_vel, phz.dt);
-    }
-    // Load springs
-    for spring in model_proto["model"]["springs"].members() {
-        let s_rest = spring["restlength"].as_f64().unwrap();
-        let s_spring = spring["springing"].as_f64().unwrap();
-        let s_dampen = spring["dampening"].as_f64().unwrap();
-        let s_ma = spring["m_a"].as_usize().unwrap();
-        let s_mb = spring["m_b"].as_usize().unwrap();
+            phz.world_cfg.drag = loaded_model.world_config.drag;
+            phz.world_cfg.gravity = V2D::new(loaded_model.world_config.gravity.x, loaded_model.world_config.gravity.y);
 
-        let _ = phz.model.new_spring(Spring::new(s_rest, s_spring, s_dampen, s_ma, s_mb));
-    }
+            for mass in loaded_model.model.masses {
+                let pos = V2D::new(mass.pos.x, mass.pos.y);
+                let vel = V2D::new(mass.vel.x, mass.vel.y);
+                let pos_prv = pos - vel * phz.dt;
+                let loaded_mass = Mass::load(mass.mass, mass.radius, &pos, &pos_prv);
+                phz.model.new_mass(loaded_mass);
+            }
 
-    // Load world config
-    let w_gravity = V2D::new(model_proto["world_config"]["gravity"]["x"].as_f64().unwrap(), model_proto["world_config"]["gravity"]["y"].as_f64().unwrap());
-    let w_drag = model_proto["world_config"]["drag"].as_f64().unwrap();
-    phz.world_cfg.gravity = w_gravity;
-    phz.world_cfg.drag = w_drag;
+            for spring in loaded_model.model.springs {
+                let loaded_spring = Spring::new(spring.restlength, spring.springing, spring.dampening, spring.m_a, spring.m_b);
+                phz.model.new_spring(loaded_spring).unwrap();
+            }
 
-    // Load bounds
-    for bound in model_proto["world"]["bounds"].members() {
-        let b_pos = V2D::new(bound["pos"]["x"].as_f64().unwrap(), bound["pos"]["y"].as_f64().unwrap());
-        let b_nrm = V2D::new(bound["nrm"]["x"].as_f64().unwrap(), bound["nrm"]["y"].as_f64().unwrap());
-        let b_refl = bound["refl"].as_f64().unwrap();
-        let b_mus = bound["mu_s"].as_f64().unwrap();
-        let b_muk = bound["mu_k"].as_f64().unwrap();
-
-        phz.world.bounds.push(Boundary::new(b_pos, b_nrm, b_refl, b_mus, b_muk));
+            for bound in loaded_model.world.bounds {
+                let pos = V2D::new(bound.pos.x, bound.pos.y);
+                let nrm = V2D::new(bound.nrm.x, bound.nrm.y);
+                let loaded_bound = Boundary::new(pos, nrm, bound.refl, bound.mu_s, bound.mu_k);
+                phz.world.bounds.push(loaded_bound);
+            }
+        },
+        Err(e) => panic!("Could not parse JSON to file: {e:?}"),
     }
 
-    // run the model
+    // Run the model
     let _ = eframe::run_native("Phyzzy", native_options, Box::new(|cc| Ok(Box::new(PhyzzyApp::new(cc, phz)))));
 }
 
