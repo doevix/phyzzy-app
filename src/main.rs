@@ -124,9 +124,6 @@ impl PhyzzyApp {
 
 impl eframe::App for PhyzzyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        egui::Panel::left("Sim controls").resizable(true).show_inside(ui, |ui| {
-            ui.heading("sim controls");
-        });
         egui::CentralPanel::default().show_inside(ui, |ui| {
             let size_v = Vec2::new(self.phz.view_sz.x as f32, self.phz.view_sz.y as f32);
             let (response, painter) = ui.allocate_painter(size_v, Sense::hover());
