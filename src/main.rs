@@ -13,8 +13,6 @@ fn main() {
 
     match model_proto {
         Ok(loaded_model) => {
-            println!("{:?}", loaded_model);
-
             phz.world_cfg.drag = loaded_model.world_config.drag;
             phz.world_cfg.gravity = V2D::new(loaded_model.world_config.gravity.x, loaded_model.world_config.gravity.y);
 
