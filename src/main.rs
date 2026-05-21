@@ -8,7 +8,7 @@ fn main() {
     let mut phz = PhyzzySimulator::new(60.0_f64.recip(), 100.0, &V2D::new(500.0, 500.0));
 
     // Super crude model loader, make it better later.
-    let model_json = fs::read_to_string("triangle.json").unwrap();
+    let model_json = fs::read_to_string("models/triangle.json").unwrap();
     let model_proto = Loader::load_from_json_str(&model_json);
 
     match model_proto {
