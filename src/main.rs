@@ -151,7 +151,8 @@ impl eframe::App for PhyzzyApp {
 
             let t_elapsed = self.phz.t_now.elapsed();
             self.phz.dt = t_elapsed.as_secs_f64();
-            let dt_display = format!("dt = {:?}", t_elapsed);
+            let framerate = t_elapsed.as_secs_f64().recip();
+            let dt_display = format!("Framerate: {framerate:.width$} Hz", width=3);
             ui.heading(dt_display);
             self.phz.t_now = Instant::now();
         });
