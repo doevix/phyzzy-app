@@ -147,7 +147,7 @@ impl eframe::App for PhyzzyApp {
             self.phz.draw_model(&painter);
 
             // Update for next frame.
-            self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg);
+            self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, false);
 
             let t_elapsed = self.phz.t_now.elapsed();
             self.phz.dt = t_elapsed.as_secs_f64();
