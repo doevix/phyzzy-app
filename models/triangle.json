@@ -53,7 +53,16 @@
                 "m_a": 2,
                 "m_b": 0
             }
-        ]
+        ],
+        "muscles": [
+            {
+                "muscle_type": "Classic",
+                "phase": 0.0,
+                "sense": 1.0,
+                "spring": 1
+            }
+        ],
+        "bladders": []
     },
     "world": {
         "bounds": [

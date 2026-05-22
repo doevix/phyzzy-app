@@ -1,6 +1,5 @@
-use phyzzy_rs::{self, Boundary, Loader, Mass, MassActuatorType, Model, Spring, SpringActuatorType, V2D, World, WorldConfig};
+use phyzzy_rs::{self, Boundary, Loader, Mass, MassActuatorType, Model, Spring, SpringActuatorType, V2D, World, WorldConfig, loader};
 use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter};
-use std::f64::consts::PI;
 use std::fs;
 use std::time::Instant;
 
@@ -30,6 +29,22 @@ fn main() {
                 phz.model.new_spring(loaded_spring).unwrap();
             }
 
+            for muscle in loaded_model.model.muscles {
+                let muscle_type = match muscle.muscle_type {
+                    loader::SpringActuatorDataType::Classic => SpringActuatorType::ClassicMuscle,
+                    loader::SpringActuatorDataType::Relaxation => SpringActuatorType::RelaxationMuscle,
+                };
+                phz.model.new_muscle(muscle_type, muscle.spring, muscle.phase, muscle.sense);
+            }
+
+            for bladder in loaded_model.model.bladders {
+                let bladder_type = match bladder.bladder_type {
+                    loader::MassActuatorDataType::Balloon => MassActuatorType::Balloon,
+                    loader::MassActuatorDataType::Tank => MassActuatorType::Tank,
+                };
+                phz.model.new_bladder(bladder_type, bladder.mass, bladder.phase, bladder.sense);
+            }
+
             for bound in loaded_model.world.bounds {
                 let pos = V2D::new(bound.pos.x, bound.pos.y);
                 let nrm = V2D::new(bound.nrm.x, bound.nrm.y);
@@ -37,9 +52,6 @@ fn main() {
                 phz.world.bounds.push(loaded_bound);
             }
             // TODO: Adjust json loader to read actuator values.
-            phz.model.new_bladder(MassActuatorType::Balloon, 0, 0.0, 1.0);
-            phz.model.new_bladder(MassActuatorType::Balloon, 1, PI / 3.0, 1.0);
-            phz.model.new_bladder(MassActuatorType::Balloon, 2, 2.0 * PI / 3.0, 1.0);
         },
         Err(e) => panic!("Could not parse JSON to file: {e:?}"),
     }
