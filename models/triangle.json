@@ -5,6 +5,9 @@
         "created": "2026-16-05"
     },
     "model": {
+        "wave_speed": 5.0,
+        "wave_amplitude": 1.0,
+        "angle": 0.0,
         "masses": [
             {
                 "mass": 0.16,

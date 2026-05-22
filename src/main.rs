@@ -15,6 +15,9 @@ fn main() {
         Ok(loaded_model) => {
             phz.world_cfg.drag = loaded_model.world_config.drag;
             phz.world_cfg.gravity = V2D::new(loaded_model.world_config.gravity.x, loaded_model.world_config.gravity.y);
+            phz.model.wave_speed = loaded_model.model.wave_speed;
+            phz.model.wave_amplitude = loaded_model.model.wave_amplitude;
+            phz.model.angle = loaded_model.model.angle;
 
             for mass in loaded_model.model.masses {
                 let pos = V2D::new(mass.pos.x, mass.pos.y);
