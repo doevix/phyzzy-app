@@ -1,5 +1,6 @@
-use phyzzy_rs::{self, Boundary, Mass, Model, Spring, V2D, World, WorldConfig, Loader};
+use phyzzy_rs::{self, Boundary, Loader, Mass, MassActuatorType, Model, Spring, SpringActuatorType, V2D, World, WorldConfig};
 use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter};
+use std::f64::consts::PI;
 use std::fs;
 use std::time::Instant;
 
@@ -35,6 +36,10 @@ fn main() {
                 let loaded_bound = Boundary::new(pos, nrm, bound.refl, bound.mu_s, bound.mu_k);
                 phz.world.bounds.push(loaded_bound);
             }
+            // TODO: Adjust json loader to read actuator values.
+            phz.model.new_bladder(MassActuatorType::Balloon, 0, 0.0, 1.0);
+            phz.model.new_bladder(MassActuatorType::Balloon, 1, PI / 3.0, 1.0);
+            phz.model.new_bladder(MassActuatorType::Balloon, 2, 2.0 * PI / 3.0, 1.0);
         },
         Err(e) => panic!("Could not parse JSON to file: {e:?}"),
     }
@@ -61,7 +66,7 @@ impl PhyzzySimulator {
             view_sz: V2D::from(view_sz),
             world: World::new(),
             world_cfg: WorldConfig { gravity: V2D::new(0.0, -9.81), drag: 0.0 },
-            model: Model::new(0.0, 0.0),
+            model: Model::new(5.0, 1.0),
             t_now: Instant::now(),
 
         }
