@@ -1,4 +1,5 @@
-use phyzzy_rs::{self, Boundary, Loader, Mass, MassActuatorType, Model, Spring, SpringActuatorType, V2D, World, WorldConfig, loader};
+use phyzzy_rs::{self, Boundary, Loader, Mass, MassActuatorType, Model, Spring, SpringActuatorType, V2D, World, WorldConfig};
+use phyzzy_rs::loader::{SpringActuatorDataType, MassActuatorDataType};
 use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter};
 use std::fs;
 use std::time::Instant;
@@ -34,16 +35,16 @@ fn main() {
 
             for muscle in loaded_model.model.muscles {
                 let muscle_type = match muscle.muscle_type {
-                    loader::SpringActuatorDataType::Classic => SpringActuatorType::ClassicMuscle,
-                    loader::SpringActuatorDataType::Relaxation => SpringActuatorType::RelaxationMuscle,
+                    SpringActuatorDataType::Classic => SpringActuatorType::ClassicMuscle,
+                    SpringActuatorDataType::Relaxation => SpringActuatorType::RelaxationMuscle,
                 };
                 phz.model.new_muscle(muscle_type, muscle.spring, muscle.phase, muscle.sense);
             }
 
             for bladder in loaded_model.model.bladders {
                 let bladder_type = match bladder.bladder_type {
-                    loader::MassActuatorDataType::Balloon => MassActuatorType::Balloon,
-                    loader::MassActuatorDataType::Tank => MassActuatorType::Tank,
+                    MassActuatorDataType::Balloon => MassActuatorType::Balloon,
+                    MassActuatorDataType::Tank => MassActuatorType::Tank,
                 };
                 phz.model.new_bladder(bladder_type, bladder.mass, bladder.phase, bladder.sense, bladder.multiplier);
             }
