@@ -45,7 +45,7 @@ fn main() {
                     loader::MassActuatorDataType::Balloon => MassActuatorType::Balloon,
                     loader::MassActuatorDataType::Tank => MassActuatorType::Tank,
                 };
-                phz.model.new_bladder(bladder_type, bladder.mass, bladder.phase, bladder.sense);
+                phz.model.new_bladder(bladder_type, bladder.mass, bladder.phase, bladder.sense, bladder.multiplier);
             }
 
             for bound in loaded_model.world.bounds {
