@@ -61,7 +61,7 @@
             {
                 "muscle_type": "Classic",
                 "phase": 0.0,
-                "sense": 1.0,
+                "sense": 0.5,
                 "spring": 1
             }
         ],
@@ -70,7 +70,7 @@
                 "bladder_type": "Balloon",
                 "phase": 0.0,
                 "sense": 1.0,
-                "multiplier": 5.0,
+                "multiplier": 3.0,
                 "mass": 0
             }
         ]
