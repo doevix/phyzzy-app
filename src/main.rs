@@ -24,7 +24,7 @@ fn main() {
                 t_now: Instant::now(),
             }
         },
-        Err(_) => panic!("Could not load model."),
+        Err(_) => PhyzzySimulator::new(init_dt, 100.0, &V2D::new(500.0, 500.0)),
     };
 
     // Run the model
