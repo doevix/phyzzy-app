@@ -1,64 +1,31 @@
-use phyzzy_rs::{self, Boundary, Loader, Mass, MassActuatorType, Model, Spring, SpringActuatorType, V2D, World, WorldConfig};
-use phyzzy_rs::loader::{SpringActuatorDataType, MassActuatorDataType};
+pub mod model_io;
+
+use phyzzy_rs::{ self, Model, V2D, World, WorldConfig };
 use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter};
-use std::fs;
 use std::time::Instant;
+
+use model_io::ModelIO;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-    let mut phz = PhyzzySimulator::new(60.0_f64.recip(), 100.0, &V2D::new(500.0, 500.0));
+    let init_dt = 60.0_f64.recip();
+    let filename = String::from("models/triangle.json");
 
-    // Super crude model loader, make it better later.
-    let model_json = fs::read_to_string("models/triangle.json").unwrap();
-    let model_proto = Loader::load_from_json_str(&model_json);
-
-    match model_proto {
-        Ok(loaded_model) => {
-            phz.world_cfg.drag = loaded_model.world_config.drag;
-            phz.world_cfg.gravity = V2D::new(loaded_model.world_config.gravity.x, loaded_model.world_config.gravity.y);
-            phz.model.wave_speed = loaded_model.model.wave_speed;
-            phz.model.wave_amplitude = loaded_model.model.wave_amplitude;
-            phz.model.angle = loaded_model.model.angle;
-
-            for mass in loaded_model.model.masses {
-                let pos = V2D::new(mass.pos.x, mass.pos.y);
-                let vel = V2D::new(mass.vel.x, mass.vel.y);
-                let pos_prv = pos - vel * phz.dt;
-                let loaded_mass = Mass::load(mass.mass, mass.radius, &pos, &pos_prv);
-                phz.model.new_mass(loaded_mass);
+    let import_result = ModelIO::import(&filename, init_dt);
+    let phz = match import_result {
+        Ok(phz_elements) => {
+            PhyzzySimulator {
+                world: phz_elements.world,
+                world_cfg: phz_elements.world_config,
+                model: phz_elements.model,
+                scaling: 100.0,
+                view_sz: V2D::new(500.0, 500.0),
+                dt: init_dt,
+                t_now: Instant::now(),
             }
-
-            for spring in loaded_model.model.springs {
-                let loaded_spring = Spring::new(spring.restlength, spring.springing, spring.dampening, spring.m_a, spring.m_b);
-                phz.model.new_spring(loaded_spring).unwrap();
-            }
-
-            for muscle in loaded_model.model.muscles {
-                let muscle_type = match muscle.muscle_type {
-                    SpringActuatorDataType::Classic => SpringActuatorType::ClassicMuscle,
-                    SpringActuatorDataType::Relaxation => SpringActuatorType::RelaxationMuscle,
-                };
-                phz.model.new_muscle(muscle_type, muscle.spring, muscle.phase, muscle.sense);
-            }
-
-            for bladder in loaded_model.model.bladders {
-                let bladder_type = match bladder.bladder_type {
-                    MassActuatorDataType::Balloon => MassActuatorType::Balloon,
-                    MassActuatorDataType::Tank => MassActuatorType::Tank,
-                };
-                phz.model.new_bladder(bladder_type, bladder.mass, bladder.phase, bladder.sense, bladder.multiplier);
-            }
-
-            for bound in loaded_model.world.bounds {
-                let pos = V2D::new(bound.pos.x, bound.pos.y);
-                let nrm = V2D::new(bound.nrm.x, bound.nrm.y);
-                let loaded_bound = Boundary::new(pos, nrm, bound.refl, bound.mu_s, bound.mu_k);
-                phz.world.bounds.push(loaded_bound);
-            }
-            // TODO: Adjust json loader to read actuator values.
         },
-        Err(e) => panic!("Could not parse JSON to file: {e:?}"),
-    }
+        Err(_) => panic!("Could not load model."),
+    };
 
     // Run the model
     let _ = eframe::run_native("Phyzzy", native_options, Box::new(|cc| Ok(Box::new(PhyzzyApp::new(cc, phz)))));
@@ -84,7 +51,6 @@ impl PhyzzySimulator {
             world_cfg: WorldConfig { gravity: V2D::new(0.0, -9.81), drag: 0.0 },
             model: Model::new(5.0, 1.0),
             t_now: Instant::now(),
-
         }
     }
 
@@ -150,18 +116,20 @@ impl eframe::App for PhyzzyApp {
             let color = Color32::from_gray(128);
             let stroke = Stroke::new(1.0, color);
 
-            // Get boundary points.
-            let left_side_x = 0.0;
-            let right_side_x = self.phz.view_sz.x / self.phz.scaling;
-            let bound_nrm = self.phz.world.bounds[0].nrm;
-            let mb = -bound_nrm.x / bound_nrm.y;
-            let pos_b = self.phz.world.bounds[0].pos;
-            let y1 = pos_b.y - mb * (pos_b.x - left_side_x);
-            let y2 = pos_b.y - mb * (pos_b.x - right_side_x);
-            let p_1 = self.phz.world_to_panel(&V2D::new(left_side_x, y1));
-            let p_2 = self.phz.world_to_panel(&V2D::new(right_side_x, y2));
-            // Draw boundary.
-            painter.line_segment([p_1, p_2], stroke);
+            if self.phz.world.bounds.len() > 0 {
+                // Get boundary points.
+                let left_side_x = 0.0;
+                let right_side_x = self.phz.view_sz.x / self.phz.scaling;
+                let bound_nrm = self.phz.world.bounds[0].nrm;
+                let mb = -bound_nrm.x / bound_nrm.y;
+                let pos_b = self.phz.world.bounds[0].pos;
+                let y1 = pos_b.y - mb * (pos_b.x - left_side_x);
+                let y2 = pos_b.y - mb * (pos_b.x - right_side_x);
+                let p_1 = self.phz.world_to_panel(&V2D::new(left_side_x, y1));
+                let p_2 = self.phz.world_to_panel(&V2D::new(right_side_x, y2));
+                // Draw boundary.
+                painter.line_segment([p_1, p_2], stroke);
+            }
 
             // Draw model.
             ui.request_repaint();
