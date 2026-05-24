@@ -1,7 +1,7 @@
 pub mod model_io;
 
 use phyzzy_rs::{ self, Model, V2D, World, WorldConfig };
-use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter};
+use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter, Rect};
 use std::time::Instant;
 
 use model_io::ModelIO;
@@ -22,7 +22,10 @@ fn main() {
                 view_sz: V2D::new(500.0, 500.0),
                 dt: init_dt,
                 t_now: Instant::now(),
-            }
+                screen_rect: Rect {
+                    min: Pos2 { x: 0.0, y: 0.0 },
+                    max: Pos2 { x: 500.0, y: 500.0 as f32 } },
+                }
         },
         Err(_) => PhyzzySimulator::new(init_dt, 100.0, &V2D::new(500.0, 500.0)),
     };
@@ -39,6 +42,7 @@ struct PhyzzySimulator {
     view_sz: V2D,
     dt: f64,
     t_now: Instant,
+    screen_rect: Rect,
 }
 
 impl PhyzzySimulator {
@@ -51,12 +55,15 @@ impl PhyzzySimulator {
             world_cfg: WorldConfig { gravity: V2D::new(0.0, -9.81), drag: 0.0 },
             model: Model::new(5.0, 1.0),
             t_now: Instant::now(),
+            screen_rect: Rect {
+                min: Pos2 { x: 0.0, y: 0.0 },
+                max: Pos2 { x: view_sz.x as f32, y: view_sz.y as f32 } },
         }
     }
 
     // transforms vector to window coordinates. Requires conversion to Vec2
     fn tf_coord(&self, phz_coord: &V2D) -> V2D {
-        phz_coord.tf_fit(self.scaling, self.view_sz.x, 0.0, -self.scaling)
+        phz_coord.tf_fit(self.scaling, self.screen_rect.max.y as f64, self.screen_rect.min.x as f64, -self.scaling)
     }
 
     fn world_to_panel(&self, phz_coord: &V2D) -> Pos2{
@@ -112,7 +119,12 @@ impl PhyzzyApp {
 
 impl eframe::App for PhyzzyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        egui::Panel::left("options_panel").show_inside(ui, |ui| {
+        egui::Panel::left("options_panel")
+        .resizable(true)
+        .min_size(100.0)
+        .max_size(500.0)
+        .show_inside(ui, |ui| {
+            ui.heading("This is text to make the box bigger");
             if ui.button("Pause").clicked() {
                 self.paused = !self.paused;
             }
@@ -120,7 +132,9 @@ impl eframe::App for PhyzzyApp {
         egui::CentralPanel::default().show_inside(ui, |ui| {
             let size_v = Vec2::new(self.phz.view_sz.x as f32, self.phz.view_sz.y as f32);
             let (response, painter) = ui.allocate_painter(size_v, Sense::hover());
-            let _ = response.rect;
+            let scr_rect = response.rect;
+            self.phz.screen_rect = scr_rect;
+
             let color = Color32::from_gray(128);
             let stroke = Stroke::new(1.0, color);
 
@@ -149,7 +163,7 @@ impl eframe::App for PhyzzyApp {
             let t_elapsed = self.phz.t_now.elapsed();
             self.phz.dt = t_elapsed.as_secs_f64();
             let framerate = t_elapsed.as_secs_f64().recip();
-            let dt_display = format!("Framerate: {framerate:.width$} Hz", width=3);
+            let dt_display = format!("Framerate: {framerate:.width$} Hz, Rect: {scr_rect}", width=3);
             ui.heading(dt_display);
             self.phz.t_now = Instant::now();
         });
