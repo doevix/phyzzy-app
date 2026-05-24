@@ -121,13 +121,15 @@ impl eframe::App for PhyzzyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         egui::Panel::left("options_panel")
         .resizable(true)
-        .min_size(100.0)
+        .min_size(150.0)
         .max_size(500.0)
         .show_inside(ui, |ui| {
-            ui.heading("This is text to make the box bigger");
+            let mystr = format!("dt = {disp_dt:.3}", disp_dt=self.phz.dt);
+            ui.heading(mystr);
             if ui.button("Pause").clicked() {
                 self.paused = !self.paused;
             }
+
         });
         egui::CentralPanel::default().show_inside(ui, |ui| {
             let size_v = Vec2::new(self.phz.view_sz.x as f32, self.phz.view_sz.y as f32);
