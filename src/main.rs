@@ -1,17 +1,17 @@
-pub mod model_io;
+pub mod phyzzy_io;
 
 use phyzzy_rs::{ self, Model, V2D, World, WorldConfig };
 use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter, Rect};
 use std::time::Instant;
 
-use model_io::ModelIO;
+use phyzzy_io::PhyzzyIO;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
     let init_dt = 60.0_f64.recip();
     let filename = String::from("models/triangle.json");
 
-    let import_result = ModelIO::import(&filename, init_dt);
+    let import_result = PhyzzyIO::import(&filename, init_dt);
     let phz = match import_result {
         Ok(phz_elements) => {
             PhyzzySimulator {

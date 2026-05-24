@@ -15,7 +15,6 @@ use phyzzy_rs::{
 };
 use std::fs;
 
-pub struct ModelIO;
 
 pub enum PhyzzyLoaderError {
     JSONReaderError,
@@ -35,7 +34,8 @@ pub struct PhyzzySimElements {
     pub world_config: WorldConfig,
 }
 
-impl ModelIO {
+pub struct PhyzzyIO;
+impl PhyzzyIO {
     pub fn import(file_name: &String, dt: f64) -> Result<PhyzzySimElements, PhyzzyLoaderError> {
         let file_txt_result = fs::read_to_string(file_name);
         let file_txt = match file_txt_result {
