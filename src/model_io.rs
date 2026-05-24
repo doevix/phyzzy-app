@@ -20,6 +20,7 @@ pub struct ModelIO;
 pub enum PhyzzyLoaderError {
     JSONReaderError,
     FileReaderError,
+    ModelBuildError,
 }
 
 pub struct PhyzzyMeta {
@@ -69,7 +70,11 @@ impl ModelIO {
 
                 for spring in loaded_data.model.springs {
                     let loaded_spring = Spring::new(spring.restlength, spring.springing, spring.dampening, spring.m_a, spring.m_b);
-                    elements.model.new_spring(loaded_spring).unwrap();
+                    let spring_insert_result = elements.model.new_spring(loaded_spring);
+                    match spring_insert_result {
+                        Ok(_) => {},
+                        Err(_) => { return Err(PhyzzyLoaderError::ModelBuildError) },
+                    }
                 }
 
                 for muscle in loaded_data.model.muscles {
