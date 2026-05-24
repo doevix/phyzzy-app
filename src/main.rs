@@ -65,7 +65,7 @@ impl PhyzzySimulator {
     }
 
     fn draw_model(&self, painter: &Painter) {
-        let color = Color32::from_gray(128);
+        let color = Color32::from_gray(255);
         let stroke = Stroke::new(1.0, color);
 
         // Draw springs
@@ -77,10 +77,11 @@ impl PhyzzySimulator {
         }
 
         // Draw masses
+        let mass_color = Color32::from_hex("#1DB322").unwrap();
         for mass in self.model.get_masses() {
             let pos = self.world_to_panel(&mass.p_i);
             let rad = (mass.r * self.scaling)  as f32;
-            painter.circle_filled(pos, rad, color);
+            painter.circle_filled(pos, rad, mass_color);
         }
     }
 
@@ -95,6 +96,7 @@ impl PhyzzySimulator {
 
 struct PhyzzyApp {
     phz: PhyzzySimulator,
+    paused: bool
 }
 
 
@@ -102,6 +104,7 @@ impl PhyzzyApp {
     fn new(_cc: &eframe::CreationContext<'_>, phz: PhyzzySimulator) -> Self {
         Self {
             phz,
+            paused: false,
         }
     }
 }
@@ -109,6 +112,11 @@ impl PhyzzyApp {
 
 impl eframe::App for PhyzzyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        egui::Panel::left("options_panel").show_inside(ui, |ui| {
+            if ui.button("Pause").clicked() {
+                self.paused = !self.paused;
+            }
+        });
         egui::CentralPanel::default().show_inside(ui, |ui| {
             let size_v = Vec2::new(self.phz.view_sz.x as f32, self.phz.view_sz.y as f32);
             let (response, painter) = ui.allocate_painter(size_v, Sense::hover());
@@ -136,7 +144,7 @@ impl eframe::App for PhyzzyApp {
             self.phz.draw_model(&painter);
 
             // Update for next frame.
-            self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, false);
+            self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, self.paused);
 
             let t_elapsed = self.phz.t_now.elapsed();
             self.phz.dt = t_elapsed.as_secs_f64();
