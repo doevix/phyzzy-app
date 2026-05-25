@@ -23,14 +23,13 @@ fn main() {
                 world_cfg: phz_elements.world_config,
                 model: phz_elements.model,
                 scaling: 0.0,
-                world_area: V2D::new(8.0, 5.0),
                 t_now: Instant::now(),
                 screen_rect: Rect {
                     min: Pos2 { x: 0.0, y: 0.0 },
                     max: Pos2 { x: 0.0, y: 0.0 as f32 } },
                 }
         },
-        Err(_) => PhyzzySimulator::new(&V2D::new(8.0, 5.0)),
+        Err(_) => PhyzzySimulator::new(),
     };
     // Run the model
     let _ = eframe::run_native("Phyzzy", native_options, Box::new(|cc| Ok(Box::new(PhyzzyApp::new(cc, phz)))));
@@ -41,7 +40,6 @@ struct PhyzzySimulator {
     world_cfg: WorldConfig,
     model: Model,
     scaling: f64,
-    world_area: V2D,
     dt: f64,
     last_frame: f64,
     t_now: Instant,
@@ -49,13 +47,12 @@ struct PhyzzySimulator {
 }
 
 impl PhyzzySimulator {
-    fn new(world_area: &V2D) -> Self {
+    fn new() -> Self {
         Self {
             dt: FIXED_DT,
             last_frame: 0.0,
             scaling: 0.0,
-            world_area: V2D::from(world_area),
-            world: World::new(),
+            world: World::new(&V2D::new(8.0, 5.0)),
             world_cfg: WorldConfig { gravity: V2D::new(0.0, -9.81), drag: 0.0 },
             model: Model::new(5.0, 1.0),
             t_now: Instant::now(),
@@ -79,9 +76,9 @@ impl PhyzzySimulator {
     // Set the area. Changes the scale.
     fn area_to_rect(&self, rect: Rect) -> (Vec2, f32) {
         let rect_sz = rect.size();
-        let world_sz = Vec2::new(self.world_area.x as f32, self.world_area.y as f32);
+        let world_sz = Vec2::new(self.world.area_sz.x as f32, self.world.area_sz.y as f32);
 
-        if self.world_area.x > self.world_area.y {
+        if world_sz.x > world_sz.y {
             let scale = rect_sz.x / world_sz.x;
             // Clamp vertical size if it gets bigger than the window's.
             if world_sz.y * scale > rect_sz.y {
@@ -91,7 +88,7 @@ impl PhyzzySimulator {
 
             (Vec2::new(rect_sz.x, world_sz.y * scale), scale)
         } else {
-            let scale = rect_sz.y / self.world_area.y as f32;
+            let scale = rect_sz.y / self.world.area_sz.y as f32;
             // Clamp horizontal size if it gets bigger than the window's.
             if world_sz.x * scale > rect_sz.x {
                 let s = rect_sz.x / world_sz.x;

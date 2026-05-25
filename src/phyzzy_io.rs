@@ -51,7 +51,7 @@ impl PhyzzyIO {
                         created: loaded_data.meta.created,
                     },
                     model: Model::new(loaded_data.model.wave_speed, loaded_data.model.wave_amplitude),
-                    world: World::new(),
+                    world: World::new(&V2D::new(loaded_data.world.area_sz.x, loaded_data.world.area_sz.y)),
                     world_config: WorldConfig {
                         gravity: V2D::new(loaded_data.world_config.gravity.x, loaded_data.world_config.gravity.y),
                         drag: loaded_data.world_config.drag,

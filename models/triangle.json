@@ -55,6 +55,7 @@
         "bladders": []
     },
     "world": {
+        "area_sz": { "x": 8.0, "y": 5.0 },
         "bounds": [
             {
                 "pos": { "x": 0.0, "y": 0.0 },
