@@ -76,18 +76,8 @@ impl PhyzzySimulator {
         Pos2::new(tf.x as f32, tf.y as f32)
     }
 
-    // Set the scaling to the size the given rect allows.
-    fn set_scale_to_rect(&mut self, rect: Rect) {
-        let biggest_world_size = if self.world_area.x > self.world_area.y { self.world_area.x } else { self.world_area.y };
-
-        let rect_size = rect.max - rect.min;
-        let smallest_rect_size = if rect_size.x < rect_size.y { rect_size.x } else { rect_size.y };
-
-        self.scaling = smallest_rect_size as f64 / biggest_world_size;
-    }
-
     // Set the area. Changes the scale.
-    fn area_to_rect(&mut self, rect: Rect) -> Vec2 {
+    fn area_to_rect(&mut self, rect: Rect) -> (Vec2, f32) {
         let rect_sz = rect.size();
         let world_sz = Vec2::new(self.world_area.x as f32, self.world_area.y as f32);
 
@@ -95,24 +85,20 @@ impl PhyzzySimulator {
             let scale = rect_sz.x / world_sz.x;
             // Clamp vertical size if it gets bigger than the window's.
             if world_sz.y * scale > rect_sz.y {
-                let scale = rect_sz.y / world_sz.y;
-                self.scaling = scale as f64;
-                return Vec2::new(world_sz.x * scale, rect_sz.y);
+                let s = rect_sz.y / world_sz.y;
+                return (Vec2::new(world_sz.x * s, rect_sz.y), s);
             }
 
-            self.scaling = scale as f64;
-            Vec2::new(rect_sz.x, world_sz.y * scale)
+            (Vec2::new(rect_sz.x, world_sz.y * scale), scale)
         } else {
             let scale = rect_sz.y / self.world_area.y as f32;
             // Clamp horizontal size if it gets bigger than the window's.
             if world_sz.x * scale > rect_sz.x {
-                let scale = rect_sz.x / world_sz.x;
-                self.scaling = scale as f64;
-                return Vec2::new(rect_sz.x, world_sz.y * scale);
+                let s = rect_sz.x / world_sz.x;
+                return (Vec2::new(rect_sz.x, world_sz.y * s), s);
             }
 
-            self.scaling = scale as f64;
-            Vec2::new(self.world_area.x as f32 * scale, rect_sz.y)
+            (Vec2::new(world_sz.x * scale, rect_sz.y), scale)
 
         }
 
@@ -190,7 +176,8 @@ impl eframe::App for PhyzzyApp {
 
             // Setup painter.
             let view_area = ui.max_rect();
-            let scaled_area = self.phz.area_to_rect(view_area);
+            let (scaled_area, scale) = self.phz.area_to_rect(view_area);
+            self.phz.scaling = scale as f64;
             let (response, painter) = ui.allocate_painter(scaled_area, Sense::hover());
             let scr_rect = response.rect;
             self.phz.screen_rect = scr_rect;
