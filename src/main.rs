@@ -1,10 +1,12 @@
 pub mod phyzzy_io;
 
 use phyzzy_rs::{ self, Model, V2D, World, WorldConfig };
-use eframe::egui::{self, Color32, Pos2, Sense, Stroke, Vec2, Painter, Rect};
+use eframe::{egui::{self, Color32, Painter, Pos2, Rect, Sense, Stroke, Vec2}, epaint::CornerRadiusF32};
 use std::time::Instant;
 
 use phyzzy_io::PhyzzyIO;
+
+const FIXED_DT: f64 = 0.001;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
@@ -16,19 +18,19 @@ fn main() {
         Ok(phz_elements) => {
             PhyzzySimulator {
                 last_frame: 60.0_f64.recip(),
-                dt: init_dt,
+                dt: FIXED_DT,
                 world: phz_elements.world,
                 world_cfg: phz_elements.world_config,
                 model: phz_elements.model,
                 scaling: 100.0,
-                view_sz: V2D::new(500.0, 500.0),
+                world_area: V2D::new(8.0, 5.0),
                 t_now: Instant::now(),
                 screen_rect: Rect {
                     min: Pos2 { x: 0.0, y: 0.0 },
                     max: Pos2 { x: 500.0, y: 500.0 as f32 } },
                 }
         },
-        Err(_) => PhyzzySimulator::new(100.0, &V2D::new(500.0, 500.0)),
+        Err(_) => PhyzzySimulator::new(100.0, &V2D::new(5.0, 5.0)),
     };
 
     // Run the model
@@ -40,7 +42,7 @@ struct PhyzzySimulator {
     world_cfg: WorldConfig,
     model: Model,
     scaling: f64,
-    view_sz: V2D,
+    world_area: V2D,
     dt: f64,
     last_frame: f64,
     t_now: Instant,
@@ -48,19 +50,19 @@ struct PhyzzySimulator {
 }
 
 impl PhyzzySimulator {
-    fn new(scaling: f64, view_sz: &V2D) -> Self {
+    fn new(scaling: f64, world_area: &V2D) -> Self {
         Self {
-            dt: 0.001,
+            dt: FIXED_DT,
             last_frame: 60.0_f64.recip(),
             scaling,
-            view_sz: V2D::from(view_sz),
+            world_area: V2D::from(world_area),
             world: World::new(),
             world_cfg: WorldConfig { gravity: V2D::new(0.0, -9.81), drag: 0.0 },
             model: Model::new(5.0, 1.0),
             t_now: Instant::now(),
             screen_rect: Rect {
                 min: Pos2 { x: 0.0, y: 0.0 },
-                max: Pos2 { x: view_sz.x as f32, y: view_sz.y as f32 } },
+                max: Pos2 { x: (scaling * world_area.x) as f32, y: (scaling * world_area.y) as f32 } },
         }
     }
 
@@ -72,6 +74,48 @@ impl PhyzzySimulator {
     fn world_to_panel(&self, phz_coord: &V2D) -> Pos2{
         let tf = self.tf_coord(phz_coord);
         Pos2::new(tf.x as f32, tf.y as f32)
+    }
+
+    // Set the scaling to the size the given rect allows.
+    fn set_scale_to_rect(&mut self, rect: Rect) {
+        let biggest_world_size = if self.world_area.x > self.world_area.y { self.world_area.x } else { self.world_area.y };
+
+        let rect_size = rect.max - rect.min;
+        let smallest_rect_size = if rect_size.x < rect_size.y { rect_size.x } else { rect_size.y };
+
+        self.scaling = smallest_rect_size as f64 / biggest_world_size;
+    }
+
+    // Set the area.
+    fn area_to_rect(&mut self, rect: Rect) -> Vec2 {
+        let rect_sz = rect.size();
+        let world_sz = Vec2::new(self.world_area.x as f32, self.world_area.y as f32);
+
+        if self.world_area.x > self.world_area.y {
+            let scale = rect_sz.x / world_sz.x;
+            // Clamp vertical size if it gets bigger than the window's.
+            if world_sz.y * scale > rect_sz.y {
+                let scale = rect_sz.y / world_sz.y;
+                self.scaling = scale as f64;
+                return Vec2::new(world_sz.x * scale, rect_sz.y);
+            }
+
+            self.scaling = scale as f64;
+            Vec2::new(rect_sz.x, world_sz.y * scale)
+        } else {
+            let scale = rect_sz.y / self.world_area.y as f32;
+            // Clamp horizontal size if it gets bigger than the window's.
+            if world_sz.x * scale > rect_sz.x {
+                let scale = rect_sz.x / world_sz.x;
+                self.scaling = scale as f64;
+                return Vec2::new(rect_sz.x, world_sz.y * scale);
+            }
+
+            self.scaling = scale as f64;
+            Vec2::new(self.world_area.x as f32 * scale, rect_sz.y)
+
+        }
+
     }
 
     fn draw_model(&self, painter: &Painter, alpha: f64) {
@@ -145,28 +189,11 @@ impl eframe::App for PhyzzyApp {
             self.phz.t_now = Instant::now();
 
             // Setup painter.
-            let size_v = Vec2::new(self.phz.view_sz.x as f32, self.phz.view_sz.y as f32);
-            let (response, painter) = ui.allocate_painter(size_v, Sense::hover());
+            let view_area = ui.max_rect();
+            let scaled_area = self.phz.area_to_rect(view_area);
+            let (response, painter) = ui.allocate_painter(scaled_area, Sense::hover());
             let scr_rect = response.rect;
             self.phz.screen_rect = scr_rect;
-
-            let color = Color32::from_gray(128);
-            let stroke = Stroke::new(1.0, color);
-
-            if self.phz.world.bounds.len() > 0 {
-                // Get boundary points.
-                let left_side_x = 0.0;
-                let right_side_x = self.phz.view_sz.x / self.phz.scaling;
-                let bound_nrm = self.phz.world.bounds[0].nrm;
-                let mb = -bound_nrm.x / bound_nrm.y;
-                let pos_b = self.phz.world.bounds[0].pos;
-                let y1 = pos_b.y - mb * (pos_b.x - left_side_x);
-                let y2 = pos_b.y - mb * (pos_b.x - right_side_x);
-                let p_1 = self.phz.world_to_panel(&V2D::new(left_side_x, y1));
-                let p_2 = self.phz.world_to_panel(&V2D::new(right_side_x, y2));
-                // Draw boundary.
-                painter.line_segment([p_1, p_2], stroke);
-            }
 
             ui.request_repaint();
 
@@ -180,10 +207,11 @@ impl eframe::App for PhyzzyApp {
             }
             let alpha = acc / self.phz.dt;
 
+            painter.rect_filled(view_area, CornerRadiusF32::same(0.0), Color32::from_gray(16));
             self.phz.draw_model(&painter, alpha);
 
             let framerate = t_elapsed.as_secs_f64().recip();
-            let dt_display = format!("Framerate: {framerate:.width$} Hz, Cycles: {sim_cycles}, Rect: {scr_rect}", width=3);
+            let dt_display = format!("Framerate: {framerate:.width$} Hz, Cycles: {sim_cycles}, Rect: {scr_rect}, Max Rect: {view_area}", width=3);
             ui.heading(dt_display);
         });
     }

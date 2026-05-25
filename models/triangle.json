@@ -25,13 +25,7 @@
                 "mass": 0.16,
                 "radius": 0.05,
                 "pos": { "x": 1.5, "y": 2.866 },
-                "vel": { "x": 0.0, "y": 0.0 }
-            },
-            {
-                "mass": 0.16,
-                "radius": 0.05,
-                "pos": { "x": 1.5, "y": 1.5 },
-                "vel": { "x": 10.5, "y": 10.0 }
+                "vel": { "x": 20.0, "y": 0.0 }
             }
         ],
         "springs": [
@@ -58,35 +52,13 @@
             }
         ],
         "muscles": [],
-        "bladders": [
-            {
-                "bladder_type": "Balloon",
-                "phase": 0.0,
-                "sense": 1.0,
-                "multiplier": 10.0,
-                "mass": 0
-            },
-            {
-                "bladder_type": "Balloon",
-                "phase": 2.0943951023931953,
-                "sense": 1.0,
-                "multiplier": 10.0,
-                "mass": 1
-            },
-            {
-                "bladder_type": "Balloon",
-                "phase": 4.1887902047863905,
-                "sense": 1.0,
-                "multiplier": 10.0,
-                "mass": 2
-            }
-        ]
+        "bladders": []
     },
     "world": {
         "bounds": [
             {
-                "pos": { "x": 0.0, "y": 0.5 },
-                "nrm": { "x": 0.1, "y": 1.0 },
+                "pos": { "x": 0.0, "y": 0.0 },
+                "nrm": { "x": 0.0, "y": 1.0 },
                 "refl": 0.8,
                 "mu_s": 0.8,
                 "mu_k": 0.6
@@ -99,7 +71,7 @@
                 "mu_k": 0.3
             },
             {
-                "pos": { "x": 5.0, "y": 0.0 },
+                "pos": { "x": 8.0, "y": 0.0 },
                 "nrm": { "x": -1.0, "y": 0.0 },
                 "refl": 0.8,
                 "mu_s": 0.6,
