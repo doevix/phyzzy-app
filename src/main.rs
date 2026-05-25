@@ -139,6 +139,12 @@ impl eframe::App for PhyzzyApp {
 
         });
         egui::CentralPanel::default().show_inside(ui, |ui| {
+            // Get time passed.
+            let t_elapsed = self.phz.t_now.elapsed();
+            self.phz.last_frame = t_elapsed.as_secs_f64();
+            self.phz.t_now = Instant::now();
+
+            // Setup painter.
             let size_v = Vec2::new(self.phz.view_sz.x as f32, self.phz.view_sz.y as f32);
             let (response, painter) = ui.allocate_painter(size_v, Sense::hover());
             let scr_rect = response.rect;
@@ -163,11 +169,6 @@ impl eframe::App for PhyzzyApp {
             }
 
             ui.request_repaint();
-
-            // Get time passed.
-            let t_elapsed = self.phz.t_now.elapsed();
-            self.phz.last_frame = t_elapsed.as_secs_f64();
-            self.phz.t_now = Instant::now();
 
             // Update for next frame.
             let mut acc = self.phz.last_frame;
