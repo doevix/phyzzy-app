@@ -77,7 +77,7 @@ impl PhyzzySimulator {
     }
 
     // Set the area. Changes the scale.
-    fn area_to_rect(&mut self, rect: Rect) -> (Vec2, f32) {
+    fn area_to_rect(&self, rect: Rect) -> (Vec2, f32) {
         let rect_sz = rect.size();
         let world_sz = Vec2::new(self.world_area.x as f32, self.world_area.y as f32);
 
