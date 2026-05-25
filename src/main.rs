@@ -185,21 +185,14 @@ impl eframe::App for PhyzzyApp {
 
             // Update for next frame.
             let mut acc = self.phz.last_frame;
-            let mut sim_cycles = 0;
             while acc >= self.phz.dt {
                 self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, self.paused);
                 acc -= self.phz.dt;
-                sim_cycles += 1;
             }
             let alpha = acc / self.phz.dt;
 
             painter.rect_filled(view_area, CornerRadiusF32::same(0.0), Color32::from_gray(16));
             self.phz.draw_model(&painter, alpha);
-
-            let framerate = t_elapsed.as_secs_f64().recip();
-            let scr_rect = self.phz.screen_rect;
-            let dt_display = format!("Framerate: {framerate:.width$} Hz, Cycles: {sim_cycles}, Rect: {scr_rect}, Max Rect: {view_area}", width=3);
-            ui.heading(dt_display);
         });
     }
 }
