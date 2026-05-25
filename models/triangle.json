@@ -57,21 +57,28 @@
                 "m_b": 0
             }
         ],
-        "muscles": [
-            {
-                "muscle_type": "Classic",
-                "phase": 0.0,
-                "sense": 0.5,
-                "spring": 1
-            }
-        ],
+        "muscles": [],
         "bladders": [
             {
                 "bladder_type": "Balloon",
                 "phase": 0.0,
                 "sense": 1.0,
-                "multiplier": 3.0,
+                "multiplier": 10.0,
                 "mass": 0
+            },
+            {
+                "bladder_type": "Balloon",
+                "phase": 2.0943951023931953,
+                "sense": 1.0,
+                "multiplier": 10.0,
+                "mass": 1
+            },
+            {
+                "bladder_type": "Balloon",
+                "phase": 4.1887902047863905,
+                "sense": 1.0,
+                "multiplier": 10.0,
+                "mass": 2
             }
         ]
     },

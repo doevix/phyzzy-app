@@ -8,26 +8,27 @@ use phyzzy_io::PhyzzyIO;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-    let init_dt = 60.0_f64.recip();
     let filename = String::from("models/triangle.json");
+    let init_dt = 0.001;
 
     let import_result = PhyzzyIO::import(&filename, init_dt);
     let phz = match import_result {
         Ok(phz_elements) => {
             PhyzzySimulator {
+                last_frame: 60.0_f64.recip(),
+                dt: init_dt,
                 world: phz_elements.world,
                 world_cfg: phz_elements.world_config,
                 model: phz_elements.model,
                 scaling: 100.0,
                 view_sz: V2D::new(500.0, 500.0),
-                dt: init_dt,
                 t_now: Instant::now(),
                 screen_rect: Rect {
                     min: Pos2 { x: 0.0, y: 0.0 },
                     max: Pos2 { x: 500.0, y: 500.0 as f32 } },
                 }
         },
-        Err(_) => PhyzzySimulator::new(init_dt, 100.0, &V2D::new(500.0, 500.0)),
+        Err(_) => PhyzzySimulator::new(100.0, &V2D::new(500.0, 500.0)),
     };
 
     // Run the model
@@ -41,14 +42,16 @@ struct PhyzzySimulator {
     scaling: f64,
     view_sz: V2D,
     dt: f64,
+    last_frame: f64,
     t_now: Instant,
     screen_rect: Rect,
 }
 
 impl PhyzzySimulator {
-    fn new(dt: f64, scaling: f64, view_sz: &V2D) -> Self {
+    fn new(scaling: f64, view_sz: &V2D) -> Self {
         Self {
-            dt,
+            dt: 0.001,
+            last_frame: 60.0_f64.recip(),
             scaling,
             view_sz: V2D::from(view_sz),
             world: World::new(),
@@ -71,8 +74,8 @@ impl PhyzzySimulator {
         Pos2::new(tf.x as f32, tf.y as f32)
     }
 
-    fn draw_model(&self, painter: &Painter) {
-        let color = Color32::from_gray(255);
+    fn draw_model(&self, painter: &Painter, alpha: f64) {
+        let color = Color32::from_gray(128);
         let stroke = Stroke::new(1.0, color);
 
         // Draw springs
@@ -86,7 +89,11 @@ impl PhyzzySimulator {
         // Draw masses
         let mass_color = Color32::from_hex("#1DB322").unwrap();
         for mass in self.model.get_masses() {
-            let pos = self.world_to_panel(&mass.p_i);
+
+            // Final frame interpolation. Reference: https://www.gafferongames.com/post/fix_your_timestep/
+            let p_render = mass.p_i * alpha + mass.p_o * (1.0 - alpha);
+            let pos = self.world_to_panel(&p_render);
+
             let rad = (mass.r * self.scaling)  as f32;
             painter.circle_filled(pos, rad, mass_color);
         }
@@ -157,17 +164,27 @@ impl eframe::App for PhyzzyApp {
 
             // Draw model.
             ui.request_repaint();
-            self.phz.draw_model(&painter);
+
+            // Get time passed.
+            let t_elapsed = self.phz.t_now.elapsed();
+            self.phz.last_frame = t_elapsed.as_secs_f64();
+            self.phz.t_now = Instant::now();
 
             // Update for next frame.
-            self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, self.paused);
+            let mut acc = self.phz.last_frame;
+            let mut sim_cycles = 0;
+            while acc >= self.phz.dt {
+                self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, self.paused);
+                acc -= self.phz.dt;
+                sim_cycles += 1;
+            }
+            let alpha = acc / self.phz.dt;
 
-            let t_elapsed = self.phz.t_now.elapsed();
-            self.phz.dt = t_elapsed.as_secs_f64();
+            self.phz.draw_model(&painter, alpha);
+
             let framerate = t_elapsed.as_secs_f64().recip();
-            let dt_display = format!("Framerate: {framerate:.width$} Hz, Rect: {scr_rect}", width=3);
+            let dt_display = format!("Framerate: {framerate:.width$} Hz, Cycles: {sim_cycles}, Rect: {scr_rect}", width=3);
             ui.heading(dt_display);
-            self.phz.t_now = Instant::now();
         });
     }
 }
