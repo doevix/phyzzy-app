@@ -1,11 +1,11 @@
 {
     "meta": {
-        "name": "actuator",
+        "name": "blob_thing",
         "creator": "doevix",
         "created": "2026-16-05"
     },
     "model": {
-        "wave_speed": 5.0,
+        "wave_speed": 2.0,
         "wave_amplitude": 1.0,
         "angle": 0.0,
         "masses": [
@@ -26,12 +26,6 @@
                 "radius": 0.05,
                 "pos": { "x": 1.5, "y": 2.866 },
                 "vel": { "x": 0.0, "y": 0.0 }
-            },
-            {
-                "mass": 0.16,
-                "radius": 0.05,
-                "pos": { "x": 1.5, "y": 1.5 },
-                "vel": { "x": 10.5, "y": 10.0 }
             }
         ],
         "springs": [
@@ -117,6 +111,6 @@
     },
     "world_config": {
         "gravity": { "x": 0.0, "y": -9.81 },
-        "drag": 0.1
+        "drag": 0.0
     }
 }
