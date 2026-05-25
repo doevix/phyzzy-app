@@ -162,7 +162,6 @@ impl eframe::App for PhyzzyApp {
                 painter.line_segment([p_1, p_2], stroke);
             }
 
-            // Draw model.
             ui.request_repaint();
 
             // Get time passed.
