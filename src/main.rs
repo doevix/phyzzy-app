@@ -10,7 +10,7 @@ const FIXED_DT: f64 = 0.001;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-    let filename = String::from("models/triangle.json");
+    let filename = String::from("models/actuator.json");
     let init_dt = 0.001;
 
     let import_result = PhyzzyIO::import(&filename, init_dt);
@@ -26,8 +26,10 @@ fn main() {
                 t_now: Instant::now(),
                 screen_rect: Rect {
                     min: Pos2 { x: 0.0, y: 0.0 },
-                    max: Pos2 { x: 0.0, y: 0.0 as f32 } },
-                }
+                    max: Pos2 { x: 0.0, y: 0.0 as f32 }
+                },
+                paused: false,
+            }
         },
         Err(_) => PhyzzySimulator::new(),
     };
@@ -44,6 +46,7 @@ struct PhyzzySimulator {
     last_frame: f64,
     t_now: Instant,
     screen_rect: Rect,
+    paused: bool,
 }
 
 impl PhyzzySimulator {
@@ -59,7 +62,8 @@ impl PhyzzySimulator {
             screen_rect: Rect {
                 min: Pos2 { x: 0.0, y: 0.0 },
                 max: Pos2 { x: 0.0, y: 0.0 },
-            }
+            },
+            paused: false,
         }
     }
 
@@ -137,7 +141,6 @@ impl PhyzzySimulator {
 
 struct PhyzzyApp {
     phz: PhyzzySimulator,
-    paused: bool
 }
 
 
@@ -145,7 +148,6 @@ impl PhyzzyApp {
     fn new(_cc: &eframe::CreationContext<'_>, phz: PhyzzySimulator) -> Self {
         Self {
             phz,
-            paused: false,
         }
     }
 }
@@ -158,10 +160,10 @@ impl eframe::App for PhyzzyApp {
         .min_size(150.0)
         .max_size(500.0)
         .show_inside(ui, |ui| {
-            let mystr = format!("dt = {disp_dt:.3}", disp_dt=self.phz.dt);
-            ui.heading(mystr);
+            let model_stats = format!("dt = {disp_dt:.3}, scaling: {scale:.3}", disp_dt=self.phz.dt, scale=self.phz.scaling);
+            ui.heading(model_stats);
             if ui.button("Pause").clicked() {
-                self.paused = !self.paused;
+                self.phz.paused = !self.phz.paused;
             }
 
         });
@@ -170,6 +172,14 @@ impl eframe::App for PhyzzyApp {
             let t_elapsed = self.phz.t_now.elapsed();
             self.phz.last_frame = t_elapsed.as_secs_f64();
             self.phz.t_now = Instant::now();
+
+            // Update model.
+            let mut acc = self.phz.last_frame;
+            while acc >= self.phz.dt {
+                self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, self.phz.paused);
+                acc -= self.phz.dt;
+            }
+            let alpha = acc / self.phz.dt;
 
             // Setup painter.
             let view_area = ui.max_rect();
@@ -180,15 +190,7 @@ impl eframe::App for PhyzzyApp {
 
             ui.request_repaint();
 
-            // Update for next frame.
-            let mut acc = self.phz.last_frame;
-            while acc >= self.phz.dt {
-                self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, self.paused);
-                acc -= self.phz.dt;
-            }
-            let alpha = acc / self.phz.dt;
-
-            painter.rect_filled(view_area, CornerRadiusF32::same(0.0), Color32::from_gray(16));
+            painter.rect_filled(self.phz.screen_rect, CornerRadiusF32::same(0.0), Color32::from_gray(16));
             self.phz.draw_model(&painter, alpha);
         });
     }
