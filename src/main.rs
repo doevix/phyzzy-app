@@ -210,9 +210,8 @@ impl eframe::App for PhyzzyApp {
             let painter = ui.painter_at(centered_rect);
             self.phz.screen_rect = centered_rect;
 
-            // Draw the elements.
-            ui.request_repaint();
             // Draw the background.
+            ui.request_repaint();
             ui.painter().rect_filled(full_area, CornerRadiusF32::same(0.0), Color32::from_gray(0));
             painter.rect_filled(self.phz.screen_rect, CornerRadiusF32::same(0.0), Color32::from_gray(16));
 
