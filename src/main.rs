@@ -179,8 +179,7 @@ impl eframe::App for PhyzzyApp {
             let (scaled_area, scale) = self.phz.area_to_rect(view_area);
             self.phz.scaling = scale as f64;
             let (response, painter) = ui.allocate_painter(scaled_area, Sense::hover());
-            let scr_rect = response.rect;
-            self.phz.screen_rect = scr_rect;
+            self.phz.screen_rect = response.rect;
 
             ui.request_repaint();
 
@@ -198,6 +197,7 @@ impl eframe::App for PhyzzyApp {
             self.phz.draw_model(&painter, alpha);
 
             let framerate = t_elapsed.as_secs_f64().recip();
+            let scr_rect = self.phz.screen_rect;
             let dt_display = format!("Framerate: {framerate:.width$} Hz, Cycles: {sim_cycles}, Rect: {scr_rect}, Max Rect: {view_area}", width=3);
             ui.heading(dt_display);
         });
