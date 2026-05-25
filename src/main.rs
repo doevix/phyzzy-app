@@ -17,22 +17,21 @@ fn main() {
     let phz = match import_result {
         Ok(phz_elements) => {
             PhyzzySimulator {
-                last_frame: 60.0_f64.recip(),
+                last_frame: 0.0,
                 dt: FIXED_DT,
                 world: phz_elements.world,
                 world_cfg: phz_elements.world_config,
                 model: phz_elements.model,
-                scaling: 100.0,
+                scaling: 0.0,
                 world_area: V2D::new(8.0, 5.0),
                 t_now: Instant::now(),
                 screen_rect: Rect {
                     min: Pos2 { x: 0.0, y: 0.0 },
-                    max: Pos2 { x: 500.0, y: 500.0 as f32 } },
+                    max: Pos2 { x: 0.0, y: 0.0 as f32 } },
                 }
         },
-        Err(_) => PhyzzySimulator::new(100.0, &V2D::new(5.0, 5.0)),
+        Err(_) => PhyzzySimulator::new(&V2D::new(8.0, 5.0)),
     };
-
     // Run the model
     let _ = eframe::run_native("Phyzzy", native_options, Box::new(|cc| Ok(Box::new(PhyzzyApp::new(cc, phz)))));
 }
@@ -50,11 +49,11 @@ struct PhyzzySimulator {
 }
 
 impl PhyzzySimulator {
-    fn new(scaling: f64, world_area: &V2D) -> Self {
+    fn new(world_area: &V2D) -> Self {
         Self {
             dt: FIXED_DT,
-            last_frame: 60.0_f64.recip(),
-            scaling,
+            last_frame: 0.0,
+            scaling: 0.0,
             world_area: V2D::from(world_area),
             world: World::new(),
             world_cfg: WorldConfig { gravity: V2D::new(0.0, -9.81), drag: 0.0 },
@@ -62,7 +61,8 @@ impl PhyzzySimulator {
             t_now: Instant::now(),
             screen_rect: Rect {
                 min: Pos2 { x: 0.0, y: 0.0 },
-                max: Pos2 { x: (scaling * world_area.x) as f32, y: (scaling * world_area.y) as f32 } },
+                max: Pos2 { x: 0.0, y: 0.0 },
+            }
         }
     }
 
