@@ -200,20 +200,23 @@ impl eframe::App for PhyzzyApp {
             let (scaled_area, scale) = self.phz.area_to_rect(full_area);
             self.phz.scaling = scale as f64;
 
+            // Center the viewer.
             let center_offset = Vec2::new(
                 (full_area.width() - scaled_area.x) * 0.5,
                 (full_area.height() - scaled_area.y) * 0.5,
             );
             let centered_min = full_area.min + center_offset;
             let centered_rect = Rect::from_min_size(centered_min, scaled_area);
-
-            ui.painter().rect_filled(full_area, CornerRadiusF32::same(0.0), Color32::from_gray(0));
             let painter = ui.painter_at(centered_rect);
             self.phz.screen_rect = centered_rect;
 
-
-            painter.rect_filled(self.phz.screen_rect, CornerRadiusF32::same(0.0), Color32::from_gray(16));
+            // Draw the elements.
             ui.request_repaint();
+            // Draw the background.
+            ui.painter().rect_filled(full_area, CornerRadiusF32::same(0.0), Color32::from_gray(0));
+            painter.rect_filled(self.phz.screen_rect, CornerRadiusF32::same(0.0), Color32::from_gray(16));
+
+            // Draw the model.
             self.phz.draw_model(&painter, alpha);
         });
     }
