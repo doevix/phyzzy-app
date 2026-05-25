@@ -1,16 +1,18 @@
 pub mod phyzzy_io;
 
 use phyzzy_rs::{ self, Model, V2D, World, WorldConfig };
-use eframe::{egui::{self, Color32, Painter, Pos2, Rect, Sense, Stroke, Vec2}, epaint::CornerRadiusF32};
+use eframe::{egui::{self, Color32, Painter, Pos2, Rect, Stroke, Vec2}, epaint::CornerRadiusF32};
 use std::time::Instant;
 
 use phyzzy_io::PhyzzyIO;
+
+use crate::phyzzy_io::PhyzzyMeta;
 
 const FIXED_DT: f64 = 0.001;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-    let filename = String::from("models/actuator.json");
+    let filename = String::from("models/blob_thing.json");
     let init_dt = 0.001;
 
     let import_result = PhyzzyIO::import(&filename, init_dt);
@@ -22,6 +24,7 @@ fn main() {
                 world: phz_elements.world,
                 world_cfg: phz_elements.world_config,
                 model: phz_elements.model,
+                model_meta: phz_elements.meta,
                 scaling: 0.0,
                 t_now: Instant::now(),
                 screen_rect: Rect {
@@ -38,6 +41,7 @@ fn main() {
 }
 
 struct PhyzzySimulator {
+    model_meta: PhyzzyMeta,
     world: World,
     world_cfg: WorldConfig,
     model: Model,
@@ -58,6 +62,11 @@ impl PhyzzySimulator {
             world: World::new(&V2D::new(8.0, 5.0)),
             world_cfg: WorldConfig { gravity: V2D::new(0.0, -9.81), drag: 0.0 },
             model: Model::new(5.0, 1.0),
+            model_meta: PhyzzyMeta {
+                name: "No name".to_string(),
+                creator: "anonymous".to_string(),
+                created: "no date".to_string(),
+            },
             t_now: Instant::now(),
             screen_rect: Rect {
                 min: Pos2 { x: 0.0, y: 0.0 },
@@ -160,10 +169,14 @@ impl eframe::App for PhyzzyApp {
         .min_size(150.0)
         .max_size(500.0)
         .show_inside(ui, |ui| {
-            let model_stats = format!("dt = {disp_dt:.3}, scaling: {scale:.3}", disp_dt=self.phz.dt, scale=self.phz.scaling);
+            let model_stats = format!("model: {name} by {creator} dt = {disp_dt:.3} [s], scaling: {scale:.3} [px/m]",
+                                      disp_dt=self.phz.dt, scale=self.phz.scaling, name=self.phz.model_meta.name, creator=self.phz.model_meta.creator);
             ui.heading(model_stats);
             if ui.button("Pause").clicked() {
                 self.phz.paused = !self.phz.paused;
+            }
+            if ui.button("change wave dir").clicked() {
+                self.phz.model.wave_speed *= -1.0;
             }
 
         });
@@ -182,15 +195,25 @@ impl eframe::App for PhyzzyApp {
             let alpha = acc / self.phz.dt;
 
             // Setup painter.
-            let view_area = ui.max_rect();
-            let (scaled_area, scale) = self.phz.area_to_rect(view_area);
-            self.phz.scaling = scale as f64;
-            let (response, painter) = ui.allocate_painter(scaled_area, Sense::hover());
-            self.phz.screen_rect = response.rect;
+            let full_area = ui.max_rect();
 
-            ui.request_repaint();
+            let (scaled_area, scale) = self.phz.area_to_rect(full_area);
+            self.phz.scaling = scale as f64;
+
+            let center_offset = Vec2::new(
+                (full_area.width() - scaled_area.x) * 0.5,
+                (full_area.height() - scaled_area.y) * 0.5,
+            );
+            let centered_min = full_area.min + center_offset;
+            let centered_rect = Rect::from_min_size(centered_min, scaled_area);
+
+            ui.painter().rect_filled(full_area, CornerRadiusF32::same(0.0), Color32::from_gray(0));
+            let painter = ui.painter_at(centered_rect);
+            self.phz.screen_rect = centered_rect;
+
 
             painter.rect_filled(self.phz.screen_rect, CornerRadiusF32::same(0.0), Color32::from_gray(16));
+            ui.request_repaint();
             self.phz.draw_model(&painter, alpha);
         });
     }
