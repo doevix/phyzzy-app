@@ -1,7 +1,7 @@
 pub mod phyzzy_io;
 
 use phyzzy_rs::{ self, Model, V2D, World, WorldConfig };
-use eframe::{egui::{self, Color32, Painter, Pos2, Rect, Stroke, Vec2}, epaint::CornerRadiusF32};
+use eframe::{egui::{self, Color32, Painter, Pos2, Rect, Sense, Stroke, Vec2}, epaint::CornerRadiusF32};
 use std::time::Instant;
 
 use phyzzy_io::PhyzzyIO;
@@ -12,7 +12,7 @@ const FIXED_DT: f64 = 0.001;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-    let filename = String::from("models/blob_thing.json");
+    let filename = String::from("models/triangle.json");
     let init_dt = 0.001;
 
     let import_result = PhyzzyIO::import(&filename, init_dt);
@@ -114,7 +114,7 @@ impl PhyzzySimulator {
 
     }
 
-    fn draw_model(&self, painter: &Painter, alpha: f64) {
+    fn draw_model(&self, painter: &Painter, alpha: f64, hover_idx: Option<usize>) {
         let color = Color32::from_gray(128);
         let stroke = Stroke::new(1.0, color);
 
@@ -128,14 +128,27 @@ impl PhyzzySimulator {
 
         // Draw masses
         let mass_color = Color32::from_hex("#1DB322").unwrap();
-        for mass in self.model.get_masses() {
+        for (idx, mass) in self.model.get_masses().iter().enumerate() {
 
             // Final frame interpolation. Reference: https://www.gafferongames.com/post/fix_your_timestep/
             let p_render = mass.p_i * alpha + mass.p_o * (1.0 - alpha);
             let pos = self.world_to_panel(&p_render);
 
             let rad = (mass.r * self.scaling)  as f32;
+
             painter.circle_filled(pos, rad, mass_color);
+
+            match hover_idx {
+                None => {},
+                Some(h_idx) => {
+                    if idx == h_idx {
+                        let highlight_color = Color32::from_gray(255);
+                        let highlight_stroke = Stroke::new(1.0, highlight_color);
+                        let highlight_rad = 5.0;
+                        painter.circle_stroke(pos, rad + highlight_rad, highlight_stroke);
+                    }
+                },
+            }
         }
     }
 
@@ -150,6 +163,8 @@ impl PhyzzySimulator {
 
 struct PhyzzyApp {
     phz: PhyzzySimulator,
+    pointer_pos: Pos2,
+    pointer_interact_pos: Pos2,
 }
 
 
@@ -157,6 +172,8 @@ impl PhyzzyApp {
     fn new(_cc: &eframe::CreationContext<'_>, phz: PhyzzySimulator) -> Self {
         Self {
             phz,
+            pointer_pos: Pos2::new(0.0, 0.0),
+            pointer_interact_pos: Pos2::new(0.0, 0.0),
         }
     }
 }
@@ -169,9 +186,9 @@ impl eframe::App for PhyzzyApp {
         .min_size(150.0)
         .max_size(500.0)
         .show_inside(ui, |ui| {
-            let model_stats = format!("model: {name} by {creator} dt = {disp_dt:.3} [s], scaling: {scale:.3} [px/m]",
-                                      disp_dt=self.phz.dt, scale=self.phz.scaling, name=self.phz.model_meta.name, creator=self.phz.model_meta.creator);
-            ui.heading(model_stats);
+            ui.heading(&self.phz.model_meta.name);
+            let creator_string = format!("by {}", self.phz.model_meta.creator);
+            ui.label(creator_string);
             if ui.button("Pause").clicked() {
                 self.phz.paused = !self.phz.paused;
             }
@@ -179,6 +196,8 @@ impl eframe::App for PhyzzyApp {
                 self.phz.model.wave_speed *= -1.0;
             }
 
+            let mousing = format!("{:?}, {:?}", self.pointer_pos, self.pointer_interact_pos);
+            ui.label(mousing);
         });
         egui::CentralPanel::default().show_inside(ui, |ui| {
             // Get time passed.
@@ -210,13 +229,43 @@ impl eframe::App for PhyzzyApp {
             let painter = ui.painter_at(centered_rect);
             self.phz.screen_rect = centered_rect;
 
+            // User interaction.
+            let response = ui.allocate_rect(centered_rect, Sense::click_and_drag());
+            let hovered_idx = match response.hover_pos() {
+                Some(pos) => {
+                    self.pointer_pos = pos;
+                    let mut m_idx: Option<usize> = None;
+                    for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
+                        let bound_rad = ((mass.r * self.phz.scaling) + 5.0) as f32;
+                        let mass_pos = self.phz.world_to_panel(&mass.p_i);
+
+                        if (pos.x - mass_pos.x).abs() < bound_rad && (pos.y - mass_pos.y).abs() < bound_rad {
+                            m_idx = Some(idx);
+                            break;
+                        }
+
+                    }
+                    m_idx
+                },
+                None => {
+                    self.pointer_pos = Pos2 { x: 0.0, y: 0.0 };
+                    None
+                }
+            };
+
+            match response.interact_pointer_pos() {
+                Some(pos) => { self.pointer_interact_pos = pos },
+                None => self.pointer_interact_pos = Pos2 { x: 0.0, y: 0.0 },
+            };
+
             // Draw the background.
             ui.request_repaint();
-            ui.painter().rect_filled(full_area, CornerRadiusF32::same(0.0), Color32::from_gray(0));
-            painter.rect_filled(self.phz.screen_rect, CornerRadiusF32::same(0.0), Color32::from_gray(16));
+            let no_radius = CornerRadiusF32::same(0.0);
+            ui.painter().rect_filled(full_area, no_radius, Color32::from_gray(0));
+            painter.rect_filled(self.phz.screen_rect, no_radius, Color32::from_gray(16));
 
             // Draw the model.
-            self.phz.draw_model(&painter, alpha);
+            self.phz.draw_model(&painter, alpha, hovered_idx);
         });
     }
 }
