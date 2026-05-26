@@ -76,9 +76,13 @@ impl PhyzzySimulator {
         }
     }
 
-    // transforms vector to window coordinates. Requires conversion to Vec2
+    // Transforms vector to window coordinates. Requires conversion to Vec2
     fn tf_coord(&self, phz_coord: &V2D) -> V2D {
-        phz_coord.tf_fit(self.scaling, self.screen_rect.max.y as f64, self.screen_rect.min.x as f64, -self.scaling)
+        // Function arranged for clarity on transformation matrix being used.
+        phz_coord.tf_fit(
+            self.scaling,                   self.screen_rect.max.y as f64,
+            self.screen_rect.min.x as f64, -self.scaling
+        )
     }
 
     fn world_to_panel(&self, phz_coord: &V2D) -> Pos2{
@@ -243,8 +247,8 @@ impl eframe::App for PhyzzyApp {
                             m_idx = Some(idx);
                             break;
                         }
-
                     }
+
                     m_idx
                 },
                 None => {
