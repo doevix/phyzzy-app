@@ -90,8 +90,19 @@ impl PhyzzySimulator {
 
         // Draw springs
         for spring in self.model.get_springs() {
-            let p_a = self.world_to_panel(&self.model.get_mass(spring.get_ma()).p_i);
-            let p_b = self.world_to_panel(&self.model.get_mass(spring.get_mb()).p_i);
+            let (p_a, p_b) = if !self.paused {
+                let mass_a = self.model.get_mass(spring.get_ma());
+                let mass_b = self.model.get_mass(spring.get_mb());
+
+                let p_render_a = mass_a.p_i * alpha + mass_a.p_o * (1.0 - alpha);
+                let p_render_b = mass_b.p_i * alpha + mass_b.p_o * (1.0 - alpha);
+
+                (self.world_to_panel(&p_render_a), self.world_to_panel(&p_render_b))
+            } else {
+                let pos_a = self.model.get_mass(spring.get_ma()).p_i;
+                let pos_b = self.model.get_mass(spring.get_mb()).p_i;
+                (self.world_to_panel(&pos_a), self.world_to_panel(&pos_b))
+            };
 
             painter.line_segment([p_a, p_b], stroke);
         }
