@@ -1,67 +1,27 @@
 {
     "meta": {
-        "name": "triangle",
+        "name": "ball",
         "creator": "doevix",
         "created": "2026-16-05"
     },
     "model": {
-        "wave_speed": 5.0,
+        "wave_speed": 2.0,
         "wave_amplitude": 1.0,
         "angle": 0.0,
         "masses": [
             {
                 "mass": 0.16,
-                "radius": 0.05,
-                "pos": { "x": 1.0, "y": 2.0 },
-                "vel": { "x": 0.0, "y": 0.0 }
-            },
-            {
-                "mass": 0.16,
-                "radius": 0.05,
-                "pos": { "x": 2.0, "y": 2.0 },
-                "vel": { "x": 0.0, "y": 0.0 }
-            },
-            {
-                "mass": 0.16,
-                "radius": 0.05,
+                "radius": 0.5,
                 "pos": { "x": 1.5, "y": 2.866 },
-                "vel": { "x": 20.0, "y": 0.0 }
-            },
-            {
-                "mass": 0.16,
-                "radius": 0.05,
-                "pos": { "x": 0.5, "y": 0.5 },
-                "vel": { "x": 10.1, "y": 10.0 }
+                "vel": { "x": 0.0, "y": 0.0 }
             }
         ],
-        "springs": [
-            {
-                "restlength": 1.0,
-                "springing": 100.0,
-                "dampening": 5.0,
-                "m_a": 0,
-                "m_b": 1
-            },
-            {
-                "restlength": 1.0,
-                "springing": 100.0,
-                "dampening": 5.0,
-                "m_a": 1,
-                "m_b": 2
-            },
-            {
-                "restlength": 1.0,
-                "springing": 50.0,
-                "dampening": 5.0,
-                "m_a": 2,
-                "m_b": 0
-            }
-        ],
+        "springs": [],
         "muscles": [],
         "bladders": []
     },
     "world": {
-        "area_sz": { "x": 12.0, "y": 7.5 },
+        "area_sz": {"x": 12.0, "y": 7.5 },
         "bounds": [
             {
                 "pos": { "x": 0.0, "y": 0.0 },
