@@ -15,9 +15,8 @@ const FIXED_DT: f64 = 0.001;
 fn main() {
     let native_options = eframe::NativeOptions::default();
     let filename = String::from("models/ball.json");
-    let init_dt = 0.001;
 
-    let import_result = PhyzzyIO::import(&filename, init_dt);
+    let import_result = PhyzzyIO::import(&filename, FIXED_DT);
     let phz = match import_result {
         Ok(phz_elements) => {
             PhyzzySimulator {

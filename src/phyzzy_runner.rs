@@ -28,6 +28,75 @@ impl PhyzzyApp {
         }
     }
 }
+impl eframe::App for PhyzzyApp {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        egui::Panel::left("options_panel")
+        .resizable(true)
+        .min_size(150.0)
+        .max_size(500.0)
+        .show_inside(ui, |ui| {
+            ui.heading(&self.phz.model_meta.name);
+            let creator_string = format!("by {}", self.phz.model_meta.creator);
+            ui.label(creator_string);
+            if ui.button("Pause").clicked() {
+                self.phz.paused = !self.phz.paused;
+            }
+            if ui.button("change wave dir").clicked() {
+                self.phz.model.wave_speed *= -1.0;
+            }
+
+            let mousing = format!("{:?}, {:?}", self.pointer_pos, self.pointer_interact_pos);
+            let mass_found = format!("mass found: {:?}", self.mass_idx);
+            let drag_speed = format!("Dragging at {:?} pps", self.pointer_drag_delta);
+            ui.label(mousing);
+            ui.label(drag_speed);
+            ui.label(mass_found);
+        });
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            // Get time passed.
+            let t_elapsed = self.phz.t_now.elapsed();
+            self.phz.last_frame = t_elapsed.as_secs_f64();
+            self.phz.t_now = Instant::now();
+
+            // Setup painter.
+            let full_area = ui.max_rect();
+            let (scaled_area, scale) = self.phz.area_to_rect(full_area);
+            self.phz.scaling = scale as f64;
+
+            // Center the viewer.
+            let center_offset = Vec2::new(
+                (full_area.width() - scaled_area.x) * 0.5,
+                (full_area.height() - scaled_area.y) * 0.5,
+            );
+            let centered_min = full_area.min + center_offset;
+            let centered_rect = Rect::from_min_size(centered_min, scaled_area);
+            let painter = ui.painter_at(centered_rect);
+            self.phz.screen_rect = centered_rect;
+
+            let response = ui.allocate_rect(centered_rect, Sense::click_and_drag());
+
+            // User interaction.
+            self.user_interact(&response);
+
+            // Update model.
+            let mut acc = self.phz.last_frame;
+            while acc >= self.phz.dt {
+                self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, self.phz.paused);
+                acc -= self.phz.dt;
+            }
+            let alpha = acc / self.phz.dt;
+
+            // Draw the background.
+            ui.request_repaint();
+            let no_radius = CornerRadiusF32::same(0.0);
+            ui.painter().rect_filled(full_area, no_radius, Color32::from_gray(0));
+            painter.rect_filled(self.phz.screen_rect, no_radius, Color32::from_gray(16));
+
+            // Draw the model.
+            self.phz.draw_model(&painter, alpha, self.mass_idx);
+        });
+    }
+}
 
 impl PhyzzyApp {
     pub fn user_interact(&mut self, response: &Response) {
@@ -127,72 +196,4 @@ impl PhyzzyApp {
 }
 
 
-impl eframe::App for PhyzzyApp {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        egui::Panel::left("options_panel")
-        .resizable(true)
-        .min_size(150.0)
-        .max_size(500.0)
-        .show_inside(ui, |ui| {
-            ui.heading(&self.phz.model_meta.name);
-            let creator_string = format!("by {}", self.phz.model_meta.creator);
-            ui.label(creator_string);
-            if ui.button("Pause").clicked() {
-                self.phz.paused = !self.phz.paused;
-            }
-            if ui.button("change wave dir").clicked() {
-                self.phz.model.wave_speed *= -1.0;
-            }
 
-            let mousing = format!("{:?}, {:?}", self.pointer_pos, self.pointer_interact_pos);
-            let mass_found = format!("mass found: {:?}", self.mass_idx);
-            let drag_speed = format!("Dragging at {:?} pps", self.pointer_drag_delta);
-            ui.label(mousing);
-            ui.label(drag_speed);
-            ui.label(mass_found);
-        });
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            // Get time passed.
-            let t_elapsed = self.phz.t_now.elapsed();
-            self.phz.last_frame = t_elapsed.as_secs_f64();
-            self.phz.t_now = Instant::now();
-
-            // Setup painter.
-            let full_area = ui.max_rect();
-            let (scaled_area, scale) = self.phz.area_to_rect(full_area);
-            self.phz.scaling = scale as f64;
-
-            // Center the viewer.
-            let center_offset = Vec2::new(
-                (full_area.width() - scaled_area.x) * 0.5,
-                (full_area.height() - scaled_area.y) * 0.5,
-            );
-            let centered_min = full_area.min + center_offset;
-            let centered_rect = Rect::from_min_size(centered_min, scaled_area);
-            let painter = ui.painter_at(centered_rect);
-            self.phz.screen_rect = centered_rect;
-
-            let response = ui.allocate_rect(centered_rect, Sense::click_and_drag());
-
-            // User interaction.
-            self.user_interact(&response);
-
-            // Update model.
-            let mut acc = self.phz.last_frame;
-            while acc >= self.phz.dt {
-                self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, self.phz.paused);
-                acc -= self.phz.dt;
-            }
-            let alpha = acc / self.phz.dt;
-
-            // Draw the background.
-            ui.request_repaint();
-            let no_radius = CornerRadiusF32::same(0.0);
-            ui.painter().rect_filled(full_area, no_radius, Color32::from_gray(0));
-            painter.rect_filled(self.phz.screen_rect, no_radius, Color32::from_gray(16));
-
-            // Draw the model.
-            self.phz.draw_model(&painter, alpha, self.mass_idx);
-        });
-    }
-}
