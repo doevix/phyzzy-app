@@ -108,7 +108,7 @@ impl PhyzzySimulator {
         }
 
         // Draw masses
-        let mass_color = Color32::from_hex("#1DB322").unwrap();
+        let mass_color = Color32::from_rgb(29, 179, 34);
         for (idx, mass) in self.model.get_masses().iter().enumerate() {
 
             // Final frame interpolation. Reference: https://www.gafferongames.com/post/fix_your_timestep/
