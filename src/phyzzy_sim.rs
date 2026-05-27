@@ -102,7 +102,7 @@ impl PhyzzySimulator {
 
             // Final frame interpolation. Reference: https://www.gafferongames.com/post/fix_your_timestep/
             let p_render = mass.p_i * alpha + mass.p_o * (1.0 - alpha);
-            let pos = self.world_to_panel(&p_render);
+            let pos = if !self.paused { self.world_to_panel(&p_render) } else { self.world_to_panel(&mass.p_i) };
 
             let rad = (mass.r * self.scaling)  as f32;
 
