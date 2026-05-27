@@ -30,7 +30,7 @@ fn main() {
                 t_now: Instant::now(),
                 screen_rect: Rect {
                     min: Pos2 { x: 0.0, y: 0.0 },
-                    max: Pos2 { x: 0.0, y: 0.0 as f32 }
+                    max: Pos2 { x: 0.0, y: 0.0 }
                 },
                 paused: false,
             }
