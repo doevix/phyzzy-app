@@ -179,11 +179,9 @@ impl PhyzzyApp {
                     -drag_delta.y as f64 / self.phz.scaling
                 ) / self.phz.last_frame;
 
-                // Since the drag velocity gets lost on release, hold on to the last velocity.
+                // Since the drag velocity gets lost on release, hold on to last non-stopped drag vel.
                 if !self.phz.paused {
-                    if !response.drag_stopped() {
-                        self.drag_vel = frame_vel;
-                    }
+                    if !response.drag_stopped() { self.drag_vel = frame_vel; }
                 } else {
                     self.drag_vel = V2D::null();
                 }
