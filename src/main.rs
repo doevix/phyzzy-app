@@ -12,7 +12,7 @@ const FIXED_DT: f64 = 0.001;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-    let filename = String::from("models/triangle.json");
+    let filename = String::from("models/ball.json");
     let init_dt = 0.001;
 
     let import_result = PhyzzyIO::import(&filename, init_dt);
@@ -167,8 +167,12 @@ impl PhyzzySimulator {
 
 struct PhyzzyApp {
     phz: PhyzzySimulator,
-    pointer_pos: Pos2,
-    pointer_interact_pos: Pos2,
+    pointer_pos: Option<Pos2>,
+    pointer_interact_pos: Option<Pos2>,
+    pointer_drag_delta: Vec2,
+    drag_vel: V2D,
+    mass_idx: Option<usize>,
+    held_idx: Option<usize>,
 }
 
 
@@ -176,8 +180,12 @@ impl PhyzzyApp {
     fn new(_cc: &eframe::CreationContext<'_>, phz: PhyzzySimulator) -> Self {
         Self {
             phz,
-            pointer_pos: Pos2::new(0.0, 0.0),
-            pointer_interact_pos: Pos2::new(0.0, 0.0),
+            pointer_pos: None,
+            pointer_interact_pos: None,
+            pointer_drag_delta: Vec2::new(0.0, 0.0),
+            drag_vel: V2D::null(),
+            mass_idx: None,
+            held_idx: None,
         }
     }
 }
@@ -201,7 +209,11 @@ impl eframe::App for PhyzzyApp {
             }
 
             let mousing = format!("{:?}, {:?}", self.pointer_pos, self.pointer_interact_pos);
+            let mass_found = format!("mass found: {:?}", self.mass_idx);
+            let drag_speed = format!("Dragging at {:?} pps", self.pointer_drag_delta);
             ui.label(mousing);
+            ui.label(drag_speed);
+            ui.label(mass_found);
         });
         egui::CentralPanel::default().show_inside(ui, |ui| {
             // Get time passed.
@@ -209,17 +221,8 @@ impl eframe::App for PhyzzyApp {
             self.phz.last_frame = t_elapsed.as_secs_f64();
             self.phz.t_now = Instant::now();
 
-            // Update model.
-            let mut acc = self.phz.last_frame;
-            while acc >= self.phz.dt {
-                self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, self.phz.paused);
-                acc -= self.phz.dt;
-            }
-            let alpha = acc / self.phz.dt;
-
             // Setup painter.
             let full_area = ui.max_rect();
-
             let (scaled_area, scale) = self.phz.area_to_rect(full_area);
             self.phz.scaling = scale as f64;
 
@@ -233,34 +236,109 @@ impl eframe::App for PhyzzyApp {
             let painter = ui.painter_at(centered_rect);
             self.phz.screen_rect = centered_rect;
 
-            // User interaction.
             let response = ui.allocate_rect(centered_rect, Sense::click_and_drag());
-            let hovered_idx = match response.hover_pos() {
+
+            // User interaction.
+            let detected_mass = match response.hover_pos() {
                 Some(pos) => {
-                    self.pointer_pos = pos;
+                    self.pointer_pos = Some(pos);
                     let mut m_idx: Option<usize> = None;
                     for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
-                        let bound_rad = ((mass.r * self.phz.scaling) + 5.0) as f32;
+                        let bound_rad = ((mass.r * self.phz.scaling) + 10.0) as f32;
                         let mass_pos = self.phz.world_to_panel(&mass.p_i);
 
-                        if (pos.x - mass_pos.x).abs() < bound_rad && (pos.y - mass_pos.y).abs() < bound_rad {
+                        if (pos - mass_pos).length() < bound_rad {
                             m_idx = Some(idx);
                             break;
                         }
                     }
 
+                    self.mass_idx = m_idx;
                     m_idx
                 },
                 None => {
-                    self.pointer_pos = Pos2 { x: 0.0, y: 0.0 };
+                    self.pointer_pos = None;
+                    self.mass_idx = None;
                     None
                 }
             };
 
             match response.interact_pointer_pos() {
-                Some(pos) => { self.pointer_interact_pos = pos },
-                None => self.pointer_interact_pos = Pos2 { x: 0.0, y: 0.0 },
+                Some(pos) => {
+                    self.pointer_interact_pos = Some(pos);
+
+                    // Find the mass that's being clicked on.
+                    let mut m_idx: Option<usize> = None;
+                    for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
+                        let bound_rad = ((mass.r * self.phz.scaling) + 10.0) as f32;
+                        let mass_pos = self.phz.world_to_panel(&mass.p_i);
+
+                        if (pos - mass_pos).length() < bound_rad {
+                            m_idx = Some(idx);
+                            break;
+                        }
+                    }
+
+                    // If a mass was found for interaction.
+                    if let Some(idx) = m_idx {
+                        // If the mass was already being used for interaction.
+                        match self.held_idx {
+                            None => {
+                                self.held_idx = m_idx;
+                                // self.drag_vel = V2D::null();
+                                self.phz.model.hold_mass(idx);
+                            },
+                            Some(_) => {},
+                        }
+                    }
+                },
+                None => {
+                    self.pointer_interact_pos = None;
+                    if let Some(idx) = self.held_idx {
+                        self.phz.model.release_mass(idx);
+                        self.held_idx = None;
+                        self.drag_vel = V2D::null();
+                    }
+                }
             };
+
+            self.pointer_drag_delta = response.drag_delta();
+
+            if response.dragged() {
+                if let (Some(idx), Some(cursor)) = (self.held_idx, response.interact_pointer_pos()) {
+                    let p_x = (cursor.x as f64 - self.phz.screen_rect.min.x as f64) / self.phz.scaling;
+                    let p_y = (self.phz.screen_rect.max.y as f64 - cursor.y as f64) / self.phz.scaling;
+                    let target = V2D::new(p_x, p_y);
+
+                    self.phz.model.set_mass_pos(idx, target);
+
+                    let drag_delta = response.drag_delta();
+                    let frame_vel = V2D::new(
+                        drag_delta.x as f64 / self.phz.scaling,
+                       -drag_delta.y as f64 / self.phz.scaling
+                    ) / self.phz.last_frame;
+
+                    // Since the drag velocity gets lost on release, hold on to the last non-zero velocity.
+                    self.drag_vel = if frame_vel.mag2() > 0.0 { frame_vel } else { self.drag_vel };
+                }
+            }
+
+            if response.drag_stopped() {
+                if let Some(idx) = self.held_idx {
+                    self.phz.model.set_mass_vel(idx, self.drag_vel, FIXED_DT);
+                    self.phz.model.release_mass(idx);
+                    self.held_idx = None;
+                    self.drag_vel = V2D::null();
+                }
+            }
+
+            // Update model.
+            let mut acc = self.phz.last_frame;
+            while acc >= self.phz.dt {
+                self.phz.model.step(self.phz.dt, &self.phz.world, &self.phz.world_cfg, self.phz.paused);
+                acc -= self.phz.dt;
+            }
+            let alpha = acc / self.phz.dt;
 
             // Draw the background.
             ui.request_repaint();
@@ -269,7 +347,7 @@ impl eframe::App for PhyzzyApp {
             painter.rect_filled(self.phz.screen_rect, no_radius, Color32::from_gray(16));
 
             // Draw the model.
-            self.phz.draw_model(&painter, alpha, hovered_idx);
+            self.phz.draw_model(&painter, alpha, detected_mass);
         });
     }
 }
