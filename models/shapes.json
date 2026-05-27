@@ -1,6 +1,6 @@
 {
     "meta": {
-        "name": "triangle",
+        "name": "shapes",
         "creator": "doevix",
         "created": "2026-16-05"
     },
@@ -27,11 +27,52 @@
                 "pos": { "x": 1.5, "y": 2.866 },
                 "vel": { "x": 20.0, "y": 0.0 }
             },
+
             {
                 "mass": 0.16,
                 "radius": 0.05,
                 "pos": { "x": 0.5, "y": 0.5 },
                 "vel": { "x": 10.1, "y": 10.0 }
+            },
+
+            {
+                "mass": 0.16,
+                "radius": 0.05,
+                "pos": { "x": 6.0, "y": 0.5 },
+                "vel": { "x": 0.0, "y": 0.0 }
+            },
+            {
+                "mass": 0.16,
+                "radius": 0.05,
+                "pos": { "x": 7.0, "y": 0.5 },
+                "vel": { "x": 0.0, "y": 0.0 }
+            },
+            {
+                "mass": 0.16,
+                "radius": 0.05,
+                "pos": { "x": 6.0, "y": 1.5 },
+                "vel": { "x": 0.0, "y": 0.0 }
+            },
+            {
+                "mass": 0.16,
+                "radius": 0.05,
+                "pos": { "x": 7.0, "y": 1.5 },
+                "vel": { "x": 0.0, "y": 0.0 }
+            },
+
+            {
+                "mass": 0.16,
+                "radius": 0.05,
+                "pos": { "x": 3.0, "y": 7.0},
+                "vel": { "x": 0.0, "y": -10.0 }
+
+            },
+            {
+                "mass": 0.16,
+                "radius": 0.05,
+                "pos": { "x": 4.0, "y": 7.0},
+                "vel": { "x": 0.0, "y": 0.0 }
+
             }
         ],
         "springs": [
@@ -51,11 +92,63 @@
             },
             {
                 "restlength": 1.0,
-                "springing": 50.0,
+                "springing": 100.0,
                 "dampening": 5.0,
                 "m_a": 2,
                 "m_b": 0
+            },
+
+            {
+                "restlength": 1.0,
+                "springing": 100.0,
+                "dampening": 5.0,
+                "m_a": 4,
+                "m_b": 5
+            },
+            {
+                "restlength": 1.0,
+                "springing": 100.0,
+                "dampening": 5.0,
+                "m_a": 4,
+                "m_b": 6
+            },
+            {
+                "restlength": 1.0,
+                "springing": 100.0,
+                "dampening": 5.0,
+                "m_a": 7,
+                "m_b": 5
+            },
+            {
+                "restlength": 1.0,
+                "springing": 100.0,
+                "dampening": 5.0,
+                "m_a": 7,
+                "m_b": 6
+            },
+            {
+                "restlength": 1.414213,
+                "springing": 100.0,
+                "dampening": 5.0,
+                "m_a": 7,
+                "m_b": 4
+            },
+            {
+                "restlength": 1.414213,
+                "springing": 100.0,
+                "dampening": 5.0,
+                "m_a": 6,
+                "m_b": 5
+            },
+
+            {
+                "restlength": 1.0,
+                "springing": 100.0,
+                "dampening": 5.0,
+                "m_a": 8,
+                "m_b": 9
             }
+
         ],
         "muscles": [],
         "bladders": []
