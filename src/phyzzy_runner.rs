@@ -1,5 +1,6 @@
 use phyzzy_rs::{ self, V2D };
 use eframe::{ egui::{ self, Color32, Pos2, Rect, Sense, Vec2, Response }, epaint::CornerRadiusF32 };
+use egui_plot::{ self, Line, LineStyle, Plot, PlotPoints };
 use std::time::Instant;
 
 use crate::phyzzy_sim::PhyzzySimulator;
@@ -27,6 +28,14 @@ impl PhyzzyApp {
             held_idx: None,
         }
     }
+
+    pub fn wave(&self, angle: f64) -> Line<'_> {
+        Line::new(
+            "wave",
+            PlotPoints::from_explicit_callback(move |x| 0.5 * (x + angle).sin(), .., 512))
+            .color(Color32::from_rgb(200, 100, 100))
+            .style(LineStyle::Solid)
+    }
 }
 impl eframe::App for PhyzzyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
@@ -51,6 +60,11 @@ impl eframe::App for PhyzzyApp {
             ui.label(mousing);
             ui.label(drag_speed);
             ui.label(mass_found);
+
+            let plot = Plot::new("Wavebox");
+            let plot_show_reponse = plot.show(ui, |plot_ui| {
+                plot_ui.line(self.wave(self.phz.model.angle));
+            });
         });
         egui::CentralPanel::default().show_inside(ui, |ui| {
             // Get time passed.
