@@ -1,5 +1,5 @@
 use phyzzy_rs::{ self, V2D };
-use eframe::{ egui::{ self, Color32, Pos2, Rect, Sense, Vec2, Response }, epaint::CornerRadiusF32 };
+use eframe::{ egui::{ self, Color32, Pos2, Rect, Response, Sense, Slider, Vec2 }, epaint::CornerRadiusF32 };
 use egui_plot::{ self, Line, LineStyle, Plot, PlotPoints };
 use core::f64;
 use std::time::Instant;
@@ -44,10 +44,10 @@ impl PhyzzyApp {
 }
 impl eframe::App for PhyzzyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        egui::Panel::left("options_panel")
+        egui::Panel::left("sim_settings_panel")
         .resizable(true)
         .min_size(150.0)
-        .max_size(200.0)
+        .max_size(180.0)
         .show_inside(ui, |ui| {
             ui.heading(&self.phz.model_meta.name);
             let creator_string = format!("by {}", self.phz.model_meta.creator);
@@ -57,11 +57,22 @@ impl eframe::App for PhyzzyApp {
                     self.phz.paused = !self.phz.paused;
                 }
                 if ui.button("Reverse").clicked() {
-                    self.phz.model.wave_speed *= -1.0;
+                    self.phz.model.toggle_wave_dir();
                 }
             });
+            let sl_wave_speed = Slider::new(&mut self.phz.model.wave_speed, 0.0..=30.0).vertical().text("w");
+            let sl_g_y = Slider::new(&mut self.phz.world_cfg.gravity.y, 0.0..=-20.0).vertical().text("g");
+            let sl_drag = Slider::new(&mut self.phz.world_cfg.drag, 0.0..=30.0).vertical().text("d");
+
+            ui.horizontal(|ui| {
+                ui.add(sl_wave_speed);
+                ui.add(sl_g_y);
+                ui.add(sl_drag);
+            });
+
             let plot = Plot::new("Wavebox")
             .allow_zoom(false)
+            .allow_axis_zoom_drag(false)
             .allow_scroll(false)
             .allow_drag(false)
             .clamp_grid(true);
@@ -69,6 +80,8 @@ impl eframe::App for PhyzzyApp {
             plot.show(ui, |plot_ui| {
                 plot_ui.line(self.wave());
             });
+
+
         });
         egui::Panel::right("properties_panel")
         .resizable(true)
