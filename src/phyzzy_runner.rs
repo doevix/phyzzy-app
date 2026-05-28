@@ -14,6 +14,7 @@ pub struct PhyzzyApp {
     pub drag_vel: V2D,
     pub mass_idx: Option<usize>,
     pub held_idx: Option<usize>,
+    pub sel_idx: Option<usize>,
 }
 
 
@@ -27,6 +28,7 @@ impl PhyzzyApp {
             drag_vel: V2D::null(),
             mass_idx: None,
             held_idx: None,
+            sel_idx: None,
         }
     }
 
@@ -59,27 +61,22 @@ impl eframe::App for PhyzzyApp {
                 if ui.button("Reverse").clicked() {
                     self.phz.model.toggle_wave_dir();
                 }
-            });
-            let sl_wave_speed = Slider::new(&mut self.phz.model.wave_speed, 0.0..=30.0).vertical().text("w");
-            let sl_g_y = Slider::new(&mut self.phz.world_cfg.gravity.y, 0.0..=-20.0).vertical().text("g");
-            let sl_drag = Slider::new(&mut self.phz.world_cfg.drag, 0.0..=30.0).vertical().text("d");
-
-            ui.horizontal(|ui| {
-                ui.add(sl_wave_speed);
-                ui.add(sl_g_y);
-                ui.add(sl_drag);
+                if ui.button("Toggle g").clicked() {
+                    self.phz.model.toggle_g();
+                }
             });
 
-            let plot = Plot::new("Wavebox")
-            .allow_zoom(false)
-            .allow_axis_zoom_drag(false)
-            .allow_scroll(false)
-            .allow_drag(false)
-            .clamp_grid(true);
-
-            plot.show(ui, |plot_ui| {
+            Plot::new("Wavebox")
+                .allow_zoom(false)
+                .allow_axis_zoom_drag(false)
+                .allow_scroll(false)
+                .allow_drag(false)
+                .clamp_grid(true)
+                .show(ui, |plot_ui| {
                 plot_ui.line(self.wave());
             });
+
+
 
 
         });
@@ -95,6 +92,20 @@ impl eframe::App for PhyzzyApp {
                 let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
                 ui.label(f_mass_props);
             }
+            ui.vertical(|ui| {
+                ui.add(Slider::new(&mut self.phz.model.wave_speed, 0.0..=30.0).text("w"));
+                ui.add(Slider::new(&mut self.phz.world_cfg.gravity.y, 0.0..=-20.0).text("g"));
+                ui.add(Slider::new(&mut self.phz.world_cfg.drag, 0.0..=30.0).text("d"));
+            });
+
+            if let Some(idx) = self.sel_idx {
+                let f_mass_idx = format!("Selected: Mass {}", idx);
+                ui.heading(f_mass_idx);
+                let mass = self.phz.model.get_mass(idx);
+                let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
+                ui.label(f_mass_props);
+            }
+
         });
         egui::CentralPanel::default().show_inside(ui, |ui| {
             // Get time passed.
@@ -195,6 +206,14 @@ impl PhyzzyApp {
                         },
                         Some(_) => {},
                     }
+
+                    // Select the mass if there isn't one selected already.
+                    match self.sel_idx {
+                        None => { self.sel_idx = m_idx; },
+                        Some(_) => {},
+                    }
+                } else {
+                    self.sel_idx = None;
                 }
             },
             None => {
