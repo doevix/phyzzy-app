@@ -82,13 +82,9 @@ impl eframe::App for PhyzzyApp {
 
             // Adjust the wave amplitude by dragging along the x axis.
             if plot.response.dragged() {
-                if plot.response.drag_delta().x > 0.0 {
-                    self.phz.model.wave_amplitude += 0.05;
-                    self.phz.model.wave_amplitude = self.phz.model.wave_amplitude.clamp(0.0, 1.0);
-                } else if plot.response.drag_delta().x < 0.0 {
-                    self.phz.model.wave_amplitude -= 0.05;
-                    self.phz.model.wave_amplitude = self.phz.model.wave_amplitude.clamp(0.0, 1.0);
-                }
+                let x_delta = plot.response.drag_delta().x as f64;
+                let p_width = plot.response.rect.width()as f64;
+                self.phz.model.wave_amplitude = (self.phz.model.wave_amplitude + x_delta / p_width).clamp(0.0, 1.0);
             }
 
         });
