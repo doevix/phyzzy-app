@@ -66,6 +66,7 @@ impl eframe::App for PhyzzyApp {
                 }
             });
 
+            // Show the muscle waveform.
             let plot = Plot::new("Wavebox")
                 .allow_zoom(false)
                 .allow_axis_zoom_drag(false)
@@ -79,6 +80,7 @@ impl eframe::App for PhyzzyApp {
                 plot_ui.line(self.wave());
             });
 
+            // Adjust the wave amplitude by dragging along the x axis.
             if plot.response.dragged() {
                 if plot.response.drag_delta().x > 0.0 {
                     self.phz.model.wave_amplitude += 0.05;
@@ -95,12 +97,14 @@ impl eframe::App for PhyzzyApp {
         .min_size(150.0)
         .max_size(200.0)
         .show_inside(ui, |ui| {
+            // Sliders for wave speed, gravity, drag
             ui.vertical(|ui| {
                 ui.add(Slider::new(&mut self.phz.model.wave_speed, 0.0..=30.0).text("w"));
                 ui.add(Slider::new(&mut self.phz.world_cfg.gravity.y, 0.0..=-20.0).text("g"));
                 ui.add(Slider::new(&mut self.phz.world_cfg.drag, 0.0..=30.0).text("d"));
             });
 
+            // Show properties of a selected mass.
             if let Some(idx) = self.sel_idx {
                 let f_mass_idx = format!("Selected: Mass {}", idx);
                 ui.heading(f_mass_idx);
@@ -109,6 +113,7 @@ impl eframe::App for PhyzzyApp {
                 ui.label(f_mass_props);
             }
 
+            // Show properties of a hovered mass.
             if let Some(idx) = self.mass_idx {
                 let f_mass_idx = format!("Mass {}", idx);
                 ui.heading(f_mass_idx);
