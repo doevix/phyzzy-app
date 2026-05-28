@@ -85,13 +85,6 @@ impl eframe::App for PhyzzyApp {
         .min_size(150.0)
         .max_size(200.0)
         .show_inside(ui, |ui| {
-            if let Some(idx) = self.mass_idx {
-                let f_mass_idx = format!("Mass {}", idx);
-                ui.heading(f_mass_idx);
-                let mass = self.phz.model.get_mass(idx);
-                let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
-                ui.label(f_mass_props);
-            }
             ui.vertical(|ui| {
                 ui.add(Slider::new(&mut self.phz.model.wave_speed, 0.0..=30.0).text("w"));
                 ui.add(Slider::new(&mut self.phz.world_cfg.gravity.y, 0.0..=-20.0).text("g"));
@@ -106,6 +99,13 @@ impl eframe::App for PhyzzyApp {
                 ui.label(f_mass_props);
             }
 
+            if let Some(idx) = self.mass_idx {
+                let f_mass_idx = format!("Mass {}", idx);
+                ui.heading(f_mass_idx);
+                let mass = self.phz.model.get_mass(idx);
+                let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
+                ui.label(f_mass_props);
+            }
         });
         egui::CentralPanel::default().show_inside(ui, |ui| {
             // Get time passed.
@@ -179,6 +179,24 @@ impl PhyzzyApp {
             }
         };
 
+        if response.clicked() {
+            if let Some(pos) = response.interact_pointer_pos() {
+                let mut m_idx: Option<usize> = None;
+
+                for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
+                    let bound_rad = ((mass.r * self.phz.scaling) + 10.0) as f32;
+                    let mass_pos = self.phz.world_to_panel(&mass.p_i);
+
+                    if (pos - mass_pos).length() < bound_rad {
+                        m_idx = Some(idx);
+                        break;
+                    }
+                }
+
+                self.sel_idx = m_idx;
+            }
+        }
+
         match response.interact_pointer_pos() {
             Some(pos) => {
                 self.pointer_interact_pos = Some(pos);
@@ -206,14 +224,6 @@ impl PhyzzyApp {
                         },
                         Some(_) => {},
                     }
-
-                    // Select the mass if there isn't one selected already.
-                    match self.sel_idx {
-                        None => { self.sel_idx = m_idx; },
-                        Some(_) => {},
-                    }
-                } else {
-                    self.sel_idx = None;
                 }
             },
             None => {
