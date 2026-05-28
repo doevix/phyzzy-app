@@ -14,7 +14,7 @@ const FIXED_DT: f64 = 0.001;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-    let filename = String::from("models/blob_thing.json");
+    let filename = String::from("models/shapes.json");
 
     let import_result = PhyzzyIO::import(&filename, FIXED_DT);
     let phz = match import_result {
