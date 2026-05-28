@@ -1,6 +1,7 @@
 use phyzzy_rs::{ self, V2D };
 use eframe::{ egui::{ self, Color32, Pos2, Rect, Sense, Vec2, Response }, epaint::CornerRadiusF32 };
 use egui_plot::{ self, Line, LineStyle, Plot, PlotPoints };
+use core::f64;
 use std::time::Instant;
 
 use crate::phyzzy_sim::PhyzzySimulator;
@@ -29,11 +30,15 @@ impl PhyzzyApp {
         }
     }
 
-    pub fn wave(&self, angle: f64) -> Line<'_> {
+    pub fn wave(&self) -> Line<'_> {
+        let two_pi = 2.0 * f64::consts::PI;
         Line::new(
             "wave",
-            PlotPoints::from_explicit_callback(move |x| 0.5 * (x + angle).sin(), .., 512))
-            .color(Color32::from_rgb(200, 100, 100))
+            PlotPoints::from_parametric_callback(move |t|
+            (0.5 * (1.0 + self.phz.model.wave_amplitude * (t + self.phz.model.angle).sin()), t),
+            0.0..two_pi,
+            64))
+            .color(Color32::from_rgb(29, 179, 34))
             .style(LineStyle::Solid)
     }
 }
@@ -42,29 +47,41 @@ impl eframe::App for PhyzzyApp {
         egui::Panel::left("options_panel")
         .resizable(true)
         .min_size(150.0)
-        .max_size(500.0)
+        .max_size(200.0)
         .show_inside(ui, |ui| {
             ui.heading(&self.phz.model_meta.name);
             let creator_string = format!("by {}", self.phz.model_meta.creator);
             ui.label(creator_string);
-            if ui.button("Pause").clicked() {
-                self.phz.paused = !self.phz.paused;
-            }
-            if ui.button("change wave dir").clicked() {
-                self.phz.model.wave_speed *= -1.0;
-            }
-
-            let mousing = format!("{:?}, {:?}", self.pointer_pos, self.pointer_interact_pos);
-            let mass_found = format!("mass found: {:?}", self.mass_idx);
-            let drag_speed = format!("Dragging at {:?} pps", self.pointer_drag_delta);
-            ui.label(mousing);
-            ui.label(drag_speed);
-            ui.label(mass_found);
-
-            let plot = Plot::new("Wavebox");
-            let plot_show_reponse = plot.show(ui, |plot_ui| {
-                plot_ui.line(self.wave(self.phz.model.angle));
+            ui.horizontal(|ui| {
+                if ui.button("Pause").clicked() {
+                    self.phz.paused = !self.phz.paused;
+                }
+                if ui.button("Reverse").clicked() {
+                    self.phz.model.wave_speed *= -1.0;
+                }
             });
+            let plot = Plot::new("Wavebox")
+            .allow_zoom(false)
+            .allow_scroll(false)
+            .allow_drag(false)
+            .clamp_grid(true);
+
+            plot.show(ui, |plot_ui| {
+                plot_ui.line(self.wave());
+            });
+        });
+        egui::Panel::right("properties_panel")
+        .resizable(true)
+        .min_size(150.0)
+        .max_size(200.0)
+        .show_inside(ui, |ui| {
+            if let Some(idx) = self.mass_idx {
+                let f_mass_idx = format!("Mass {}", idx);
+                ui.heading(f_mass_idx);
+                let mass = self.phz.model.get_mass(idx);
+                let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
+                ui.label(f_mass_props);
+            }
         });
         egui::CentralPanel::default().show_inside(ui, |ui| {
             // Get time passed.
