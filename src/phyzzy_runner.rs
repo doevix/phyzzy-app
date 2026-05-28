@@ -66,18 +66,28 @@ impl eframe::App for PhyzzyApp {
                 }
             });
 
-            Plot::new("Wavebox")
+            let plot = Plot::new("Wavebox")
                 .allow_zoom(false)
                 .allow_axis_zoom_drag(false)
                 .allow_scroll(false)
                 .allow_drag(false)
-                .clamp_grid(true)
+                .include_x(0.0)
+                .include_x(1.0)
+                .set_margin_fraction(Vec2::ZERO)
                 .show(ui, |plot_ui| {
+                    plot_ui.set_plot_bounds(egui_plot::PlotBounds::from_min_max([0.0, 0.0], [1.0, 6.28]));
                 plot_ui.line(self.wave());
             });
 
-
-
+            if plot.response.dragged() {
+                if plot.response.drag_delta().x > 0.0 {
+                    self.phz.model.wave_amplitude += 0.05;
+                    self.phz.model.wave_amplitude = self.phz.model.wave_amplitude.clamp(0.0, 1.0);
+                } else if plot.response.drag_delta().x < 0.0 {
+                    self.phz.model.wave_amplitude -= 0.05;
+                    self.phz.model.wave_amplitude = self.phz.model.wave_amplitude.clamp(0.0, 1.0);
+                }
+            }
 
         });
         egui::Panel::right("properties_panel")
