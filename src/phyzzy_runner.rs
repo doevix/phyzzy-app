@@ -5,6 +5,7 @@ use core::f64;
 use std::time::Instant;
 
 use crate::phyzzy_sim::PhyzzySimulator;
+use crate::phyzzy_interact::PhyzzyInteract;
 
 pub struct PhyzzyApp {
     pub phz: PhyzzySimulator,
