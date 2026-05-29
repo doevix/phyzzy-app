@@ -1,14 +1,16 @@
 use phyzzy_rs::{ self, V2D };
-use eframe::{ egui::{ self, Color32, Pos2, Rect, Response, Sense, Slider, Vec2 }, epaint::CornerRadiusF32 };
+use eframe::{ egui::{ self, Color32, Pos2, Rect, Response, Sense, Slider, Vec2, Painter }, epaint::{ CornerRadiusF32, Stroke, }
+};
 use egui_plot::{ self, Line, LineStyle, Plot, PlotPoints };
 use core::f64;
 use std::time::Instant;
 
-use crate::phyzzy_sim::PhyzzySimulator;
+use crate::{phyzzy_interact::PhyzzyObject, phyzzy_sim::PhyzzySimulator};
 use crate::phyzzy_interact::PhyzzyInteract;
 
 pub struct PhyzzyApp {
     pub phz: PhyzzySimulator,
+    pub interact: PhyzzyInteract,
     pub pointer_pos: Option<Pos2>,
     pub pointer_interact_pos: Option<Pos2>,
     pub pointer_drag_delta: Vec2,
@@ -23,6 +25,7 @@ impl PhyzzyApp {
     pub fn new(_cc: &eframe::CreationContext<'_>, phz: PhyzzySimulator) -> Self {
         Self {
             phz,
+            interact: PhyzzyInteract::init(),
             pointer_pos: None,
             pointer_interact_pos: None,
             pointer_drag_delta: Vec2::new(0.0, 0.0),
@@ -143,7 +146,8 @@ impl eframe::App for PhyzzyApp {
             let response = ui.allocate_rect(centered_rect, Sense::click_and_drag());
 
             // User interaction.
-            self.user_interact(&response);
+            // self.user_interact(&response);
+            self.interact.user_hover(&response, &self.phz);
 
             // Update model.
             let mut acc = self.phz.last_frame;
@@ -160,12 +164,67 @@ impl eframe::App for PhyzzyApp {
             painter.rect_filled(self.phz.screen_rect, no_radius, Color32::from_gray(16));
 
             // Draw the model.
-            self.phz.draw_model(&painter, alpha, self.mass_idx);
+            self.draw_model(&painter, alpha, &self.interact.hover_idx);
         });
     }
 }
 
 impl PhyzzyApp {
+    // TODO: Decide whether to move this over to phyzzy_runner
+    pub fn draw_model(&self, painter: &Painter, alpha: f64, hover_idx: &Option<PhyzzyObject>) {
+        let color = Color32::from_gray(128);
+        let stroke = Stroke::new(1.0, color);
+
+        // Draw springs
+        for spring in self.phz.model.get_springs() {
+            let (p_a, p_b) = if !self.phz.paused {
+                let mass_a = self.phz.model.get_mass(spring.get_ma());
+                let mass_b = self.phz.model.get_mass(spring.get_mb());
+
+                let p_render_a = mass_a.p_i * alpha + mass_a.p_o * (1.0 - alpha);
+                let p_render_b = mass_b.p_i * alpha + mass_b.p_o * (1.0 - alpha);
+
+                (self.phz.world_to_panel(&p_render_a), self.phz.world_to_panel(&p_render_b))
+            } else {
+                let pos_a = self.phz.model.get_mass(spring.get_ma()).p_i;
+                let pos_b = self.phz.model.get_mass(spring.get_mb()).p_i;
+                (self.phz.world_to_panel(&pos_a), self.phz.world_to_panel(&pos_b))
+            };
+
+            painter.line_segment([p_a, p_b], stroke);
+        }
+
+        // Draw masses
+        let mass_color = Color32::from_rgb(29, 179, 34);
+        for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
+
+            // Final frame interpolation. Reference: https://www.gafferongames.com/post/fix_your_timestep/
+            let p_render = mass.p_i * alpha + mass.p_o * (1.0 - alpha);
+            let pos = if !self.phz.paused { self.phz.world_to_panel(&p_render) } else { self.phz.world_to_panel(&mass.p_i) };
+
+            let rad = (mass.r * self.phz.scaling)  as f32;
+
+            painter.circle_filled(pos, rad, mass_color);
+
+            match hover_idx {
+                None => {},
+                Some(h_idx) => {
+                    let i_idx = idx;
+                    match h_idx {
+                        PhyzzyObject::Mass { idx } => {
+                            if i_idx == *idx {
+                                let highlight_color = Color32::from_gray(255);
+                                let highlight_stroke = Stroke::new(1.0, highlight_color);
+                                let highlight_rad = 5.0;
+                                painter.circle_stroke(pos, rad + highlight_rad, highlight_stroke);
+                            }
+                        },
+                        PhyzzyObject::Spring { idx: _idx } => {}
+                    }
+                },
+            }
+        }
+    }
     pub fn user_interact(&mut self, response: &Response) {
         match response.hover_pos() {
             Some(pos) => {
