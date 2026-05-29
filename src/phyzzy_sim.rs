@@ -83,7 +83,7 @@ impl PhyzzySimulator {
     }
 
 
-
+    // TODO: Decide whether to move this over to phyzzy_runner
     pub fn draw_model(&self, painter: &Painter, alpha: f64, hover_idx: Option<usize>) {
         let color = Color32::from_gray(128);
         let stroke = Stroke::new(1.0, color);
