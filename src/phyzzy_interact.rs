@@ -1,5 +1,5 @@
 use eframe::egui::Response;
-use phyzzy_rs::V2D;
+use phyzzy_rs::{Model, V2D};
 
 pub enum PhyzzyObject {
     Mass { idx: usize },
@@ -21,4 +21,10 @@ impl PhyzzyInteract {
         }
     }
 
+    pub fn user_hover(response: &Response, model: &Model) {
+
+    }
+    pub fn user_select(response: &Response, model: &Model) {
+
+    }
 }
