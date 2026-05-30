@@ -40,7 +40,7 @@ impl PhyzzyInteract {
             None => { None },
         };
     }
-    pub fn user_select(&mut self, response: &Response, phz: &PhyzzySimulator) {
+    pub fn user_single_select(&mut self, response: &Response, phz: &PhyzzySimulator) {
 
     }
     pub fn user_drag(&mut self, response: &Response, phz: &PhyzzySimulator) {
