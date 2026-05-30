@@ -148,6 +148,7 @@ impl eframe::App for PhyzzyApp {
             // User interaction.
             // self.user_interact(&response);
             self.interact.user_hover(&response, &self.phz);
+            self.interact.user_single_select(&response, &self.phz);
 
             // Update model.
             let mut acc = self.phz.last_frame;
@@ -164,14 +165,14 @@ impl eframe::App for PhyzzyApp {
             painter.rect_filled(self.phz.screen_rect, no_radius, Color32::from_gray(16));
 
             // Draw the model.
-            self.draw_model(&painter, alpha, &self.interact.hover_idx);
+            self.draw_model(&painter, alpha, &self.interact.hover_idx, &self.interact.selection);
         });
     }
 }
 
 impl PhyzzyApp {
     // TODO: Decide whether to move this over to phyzzy_runner
-    pub fn draw_model(&self, painter: &Painter, alpha: f64, hover_idx: &Option<PhyzzyObject>) {
+    pub fn draw_model(&self, painter: &Painter, alpha: f64, hover_idx: &Option<PhyzzyObject>, sel_idx: &Vec<PhyzzyObject>) {
         let color = Color32::from_gray(128);
         let stroke = Stroke::new(1.0, color);
 
@@ -222,6 +223,22 @@ impl PhyzzyApp {
                         PhyzzyObject::Spring { idx: _idx } => {}
                     }
                 },
+            }
+
+            if sel_idx.len() > 0 {
+                let h_idx = &sel_idx[0];
+                let i_idx = idx;
+                match h_idx {
+                    PhyzzyObject::Mass { idx } => {
+                        if i_idx == *idx {
+                            let highlight_color = Color32::from_gray(255);
+                            let highlight_stroke = Stroke::new(1.0, highlight_color);
+                            let highlight_rad = 10.0;
+                            painter.circle_stroke(pos, rad + highlight_rad, highlight_stroke);
+                        }
+                    },
+                    PhyzzyObject::Spring { idx: _idx } => {}
+                }
             }
         }
     }
