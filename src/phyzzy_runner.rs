@@ -212,7 +212,7 @@ impl PhyzzyApp {
                 Some(h_idx) => {
                     let i_idx = idx;
                     match h_idx {
-                        PhyzzyObject::Mass { idx } => {
+                        PhyzzyObject::Mass (idx) => {
                             if i_idx == *idx {
                                 let highlight_color = Color32::from_gray(255);
                                 let highlight_stroke = Stroke::new(1.0, highlight_color);
@@ -220,7 +220,7 @@ impl PhyzzyApp {
                                 painter.circle_stroke(pos, rad + highlight_rad, highlight_stroke);
                             }
                         },
-                        PhyzzyObject::Spring { idx: _idx } => {}
+                        PhyzzyObject::Spring (_idx) => {}
                     }
                 },
             }
@@ -229,7 +229,7 @@ impl PhyzzyApp {
                 let h_idx = &sel_idx[0];
                 let i_idx = idx;
                 match h_idx {
-                    PhyzzyObject::Mass { idx } => {
+                    PhyzzyObject::Mass(idx) => {
                         if i_idx == *idx {
                             let highlight_color = Color32::from_gray(255);
                             let highlight_stroke = Stroke::new(1.0, highlight_color);
@@ -237,7 +237,7 @@ impl PhyzzyApp {
                             painter.circle_stroke(pos, rad + highlight_rad, highlight_stroke);
                         }
                     },
-                    PhyzzyObject::Spring { idx: _idx } => {}
+                    PhyzzyObject::Spring(_idx) => {}
                 }
             }
         }
