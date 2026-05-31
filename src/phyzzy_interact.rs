@@ -5,8 +5,8 @@ use crate::phyzzy_sim::PhyzzySimulator;
 
 #[derive(PartialEq, Eq)]
 pub enum PhyzzyObject {
-    Mass { idx: usize },
-    Spring { idx: usize },
+    Mass(usize),
+    Spring(usize),
 }
 
 pub struct PhyzzyInteract {
@@ -34,7 +34,7 @@ impl PhyzzyInteract {
                 });
 
                 match m_idx {
-                    Some(idx) => Some(PhyzzyObject::Mass { idx }),
+                    Some(idx) => Some(PhyzzyObject::Mass(idx)),
                     None => None,
                 }
             },
@@ -51,7 +51,7 @@ impl PhyzzyInteract {
                     (interact_coord - mass_panel_pos).length() <= rad_detect
                 });
                 match m_idx {
-                    Some(idx) => Some(PhyzzyObject::Mass { idx }),
+                    Some(idx) => Some(PhyzzyObject::Mass (idx)),
                     None => None,
                 }
             },
@@ -65,15 +65,15 @@ impl PhyzzyInteract {
             match sel_idx {
                 // When the user is holding a mass.
                 Some(idx) => match idx {
-                    PhyzzyObject::Mass { idx: o_idx } => {
-                        let contains = self.selection.contains(&PhyzzyObject::Mass { idx: o_idx });
+                    PhyzzyObject::Mass (o_idx) => {
+                        let contains = self.selection.contains(&PhyzzyObject::Mass(o_idx));
                         // Not selected, or a different mass is selected.
                         if !contains && !response.dragged(){
                             self.selection.clear();
-                            self.selection.push(PhyzzyObject::Mass { idx: o_idx });
+                            self.selection.push(PhyzzyObject::Mass(o_idx));
                         }
                     },
-                    PhyzzyObject::Spring { idx: _o_idx } => {},
+                    PhyzzyObject::Spring (_o_idx) => {},
                 },
                 // When the user clicked on empty space.
                 None => {
@@ -87,10 +87,10 @@ impl PhyzzyInteract {
                 // when the user clicked an object
                 Some(idx) => {
                     match idx {
-                        PhyzzyObject::Mass { idx } => {
-                            self.selection.push(PhyzzyObject::Mass { idx });
+                        PhyzzyObject::Mass (idx) => {
+                            self.selection.push(PhyzzyObject::Mass (idx));
                         },
-                        PhyzzyObject::Spring { idx: _idx } => {},
+                        PhyzzyObject::Spring (_idx) => {},
                     }
                 },
                 None => {}
