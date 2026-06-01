@@ -9,13 +9,13 @@ pub enum PhyzzyObject {
     Spring(usize),
 }
 
-pub struct PhyzzyInteract {
+pub struct PhyzzyViewport {
     pub drag_vel: V2D,
     pub selection: Vec<PhyzzyObject>,
     pub hover_idx: Option<PhyzzyObject>,
 }
 
-impl PhyzzyInteract {
+impl PhyzzyViewport{
     pub fn init() -> Self {
         Self {
             drag_vel: V2D::null(),

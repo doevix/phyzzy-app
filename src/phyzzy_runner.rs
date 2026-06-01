@@ -5,12 +5,12 @@ use egui_plot::{ self, Line, LineStyle, Plot, PlotPoints };
 use core::f64;
 use std::{f64::consts::TAU, time::Instant};
 
-use crate::{phyzzy_interact::PhyzzyObject, phyzzy_sim::PhyzzySimulator};
-use crate::phyzzy_interact::PhyzzyInteract;
+use crate::phyzzy_sim::PhyzzySimulator;
+use crate::phyzzy_viewport::{ PhyzzyViewport, PhyzzyObject };
 
 pub struct PhyzzyApp {
     pub phz: PhyzzySimulator,
-    pub interact: PhyzzyInteract,
+    pub interact: PhyzzyViewport,
     pub pointer_pos: Option<Pos2>,
     pub pointer_interact_pos: Option<Pos2>,
     pub pointer_drag_delta: Vec2,
@@ -25,7 +25,7 @@ impl PhyzzyApp {
     pub fn new(_cc: &eframe::CreationContext<'_>, phz: PhyzzySimulator) -> Self {
         Self {
             phz,
-            interact: PhyzzyInteract::init(),
+            interact: PhyzzyViewport::init(),
             pointer_pos: None,
             pointer_interact_pos: None,
             pointer_drag_delta: Vec2::new(0.0, 0.0),
@@ -37,12 +37,11 @@ impl PhyzzyApp {
     }
 
     pub fn wave(&self) -> Line<'_> {
-        let two_pi = 2.0 * f64::consts::PI;
         Line::new(
             "wave",
             PlotPoints::from_parametric_callback(move |t|
             (0.5 * (1.0 + self.phz.model.wave_amplitude * (t + self.phz.model.angle).sin()), t),
-            0.0..two_pi,
+            0.0..TAU,
             64))
             .color(Color32::from_rgb(29, 179, 34))
             .style(LineStyle::Solid)
