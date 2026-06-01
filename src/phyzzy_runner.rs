@@ -3,7 +3,7 @@ use eframe::{ egui::{ self, Color32, Pos2, Rect, Response, Sense, Slider, Vec2, 
 };
 use egui_plot::{ self, Line, LineStyle, Plot, PlotPoints };
 use core::f64;
-use std::time::Instant;
+use std::{f64::consts::TAU, time::Instant};
 
 use crate::{phyzzy_interact::PhyzzyObject, phyzzy_sim::PhyzzySimulator};
 use crate::phyzzy_interact::PhyzzyInteract;
@@ -80,7 +80,7 @@ impl eframe::App for PhyzzyApp {
                 .include_x(1.0)
                 .set_margin_fraction(Vec2::ZERO)
                 .show(ui, |plot_ui| {
-                    plot_ui.set_plot_bounds(egui_plot::PlotBounds::from_min_max([0.0, 0.0], [1.0, 6.28]));
+                    plot_ui.set_plot_bounds(egui_plot::PlotBounds::from_min_max([0.0, 0.0], [1.0, TAU]));
                 plot_ui.line(self.wave());
             });
 
@@ -269,17 +269,13 @@ impl PhyzzyApp {
 
         if response.clicked() {
             if let Some(pos) = response.interact_pointer_pos() {
-                let mut m_idx: Option<usize> = None;
 
-                for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
+                let m_idx = self.phz.model.get_masses().iter().position(|mass| {
                     let bound_rad = ((mass.r * self.phz.scaling) + 10.0) as f32;
                     let mass_pos = self.phz.world_to_panel(&mass.p_i);
 
-                    if (pos - mass_pos).length() < bound_rad {
-                        m_idx = Some(idx);
-                        break;
-                    }
-                }
+                    (pos - mass_pos).length() < bound_rad
+                });
 
                 self.sel_idx = m_idx;
             }
