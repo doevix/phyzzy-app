@@ -129,24 +129,10 @@ impl eframe::App for PhyzzyApp {
 
             // Setup painter.
             self.interact.area_rect(&ui, &self.phz);
-            // let full_area = ui.max_rect();
-            // let (scaled_area, scale) = self.phz.area_to_rect(full_area);
-            // self.phz.scaling = scale as f64;
-            //
-            // // Center the viewer.
-            // let center_offset = Vec2::new(
-            //     (full_area.width() - scaled_area.x) * 0.5,
-            //     (full_area.height() - scaled_area.y) * 0.5,
-            // );
-            // let centered_min = full_area.min + center_offset;
-            // let centered_rect = Rect::from_min_size(centered_min, scaled_area);
-            //
-            // let painter = ui.painter_at(centered_rect);
-            // self.phz.screen_rect = centered_rect;
 
-            // let response = ui.allocate_rect(centered_rect, Sense::click_and_drag());
 
             // User interaction.
+            // let response = ui.allocate_rect(centered_rect, Sense::click_and_drag());
             // self.user_interact(&response);
             // self.interact.user_hover(&response, &self.phz);
             // self.interact.user_single_select(&response, &self.phz);
@@ -162,89 +148,14 @@ impl eframe::App for PhyzzyApp {
             // Draw the background.
             ui.request_repaint();
 
-            self.interact.draw(&ui, &self.phz, alpha);
-            // let no_radius = CornerRadiusF32::same(0.0);
-            // ui.painter().rect_filled(full_area, no_radius, Color32::from_gray(0));
-            // painter.rect_filled(self.phz.screen_rect, no_radius, Color32::from_gray(16));
-
             // Draw the model.
-            // self.draw_model(&painter, alpha, &self.interact.hover_idx, &self.interact.selection);
+            self.interact.draw(&ui, &self.phz, alpha);
         });
     }
 }
 
 impl PhyzzyApp {
     // TODO: Decide whether to move this over to phyzzy_runner
-    pub fn draw_model(&self, painter: &Painter, alpha: f64, hover_idx: &Option<PhyzzyObject>, sel_idx: &Vec<PhyzzyObject>) {
-        let color = Color32::from_gray(128);
-        let stroke = Stroke::new(1.0, color);
-
-        // Draw springs
-        for spring in self.phz.model.get_springs() {
-            let (p_a, p_b) = if !self.phz.paused {
-                let mass_a = self.phz.model.get_mass(spring.get_ma());
-                let mass_b = self.phz.model.get_mass(spring.get_mb());
-
-                let p_render_a = mass_a.p_i * alpha + mass_a.p_o * (1.0 - alpha);
-                let p_render_b = mass_b.p_i * alpha + mass_b.p_o * (1.0 - alpha);
-
-                (self.phz.world_to_panel(&p_render_a), self.phz.world_to_panel(&p_render_b))
-            } else {
-                let pos_a = self.phz.model.get_mass(spring.get_ma()).p_i;
-                let pos_b = self.phz.model.get_mass(spring.get_mb()).p_i;
-                (self.phz.world_to_panel(&pos_a), self.phz.world_to_panel(&pos_b))
-            };
-
-            painter.line_segment([p_a, p_b], stroke);
-        }
-
-        // Draw masses
-        let mass_color = Color32::from_rgb(29, 179, 34);
-        for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
-
-            // Final frame interpolation. Reference: https://www.gafferongames.com/post/fix_your_timestep/
-            let p_render = mass.p_i * alpha + mass.p_o * (1.0 - alpha);
-            let pos = if !self.phz.paused { self.phz.world_to_panel(&p_render) } else { self.phz.world_to_panel(&mass.p_i) };
-
-            let rad = (mass.r * self.phz.scaling)  as f32;
-
-            painter.circle_filled(pos, rad, mass_color);
-
-            match hover_idx {
-                None => {},
-                Some(h_idx) => {
-                    let i_idx = idx;
-                    match h_idx {
-                        PhyzzyObject::Mass (idx) => {
-                            if i_idx == *idx {
-                                let highlight_color = Color32::from_gray(255);
-                                let highlight_stroke = Stroke::new(1.0, highlight_color);
-                                let highlight_rad = 5.0;
-                                painter.circle_stroke(pos, rad + highlight_rad, highlight_stroke);
-                            }
-                        },
-                        PhyzzyObject::Spring (_idx) => {}
-                    }
-                },
-            }
-
-            if sel_idx.len() > 0 {
-                let h_idx = &sel_idx[0];
-                let i_idx = idx;
-                match h_idx {
-                    PhyzzyObject::Mass(idx) => {
-                        if i_idx == *idx {
-                            let highlight_color = Color32::from_gray(255);
-                            let highlight_stroke = Stroke::new(1.0, highlight_color);
-                            let highlight_rad = 10.0;
-                            painter.circle_stroke(pos, rad + highlight_rad, highlight_stroke);
-                        }
-                    },
-                    PhyzzyObject::Spring(_idx) => {}
-                }
-            }
-        }
-    }
     pub fn user_interact(&mut self, response: &Response) {
         match response.hover_pos() {
             Some(pos) => {

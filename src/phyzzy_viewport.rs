@@ -76,6 +76,7 @@ impl PhyzzyViewport{
             let mass_a = phz.model.get_mass(spring.get_ma());
             let mass_b = phz.model.get_mass(spring.get_mb());
 
+            // Ignoring approximation on pause prevents jitter.
             let (pos_a, pos_b) = if !phz.paused {
                 (self.world_to_panel(&mass_a.approx_pos(alpha)),
                  self.world_to_panel(&mass_b.approx_pos(alpha)))
