@@ -1,4 +1,4 @@
-use eframe::egui::Response;
+use eframe::{egui::{ Color32, Pos2, Response, Stroke, Ui, Vec2 }, egui_wgpu::winit::Painter, epaint::{ CornerRadiusF32, Rect }};
 use phyzzy_rs::V2D;
 
 use crate::phyzzy_sim::PhyzzySimulator;
@@ -10,6 +10,10 @@ pub enum PhyzzyObject {
 }
 
 pub struct PhyzzyViewport {
+    pub scale: f32,
+    pub centered_rect: Rect,
+    pub full_area: Rect,
+    pub frame_alpha: f32,
     pub drag_vel: V2D,
     pub selection: Vec<PhyzzyObject>,
     pub hover_idx: Option<PhyzzyObject>,
@@ -18,9 +22,87 @@ pub struct PhyzzyViewport {
 impl PhyzzyViewport{
     pub fn init() -> Self {
         Self {
+            scale: 0.0,
+            centered_rect: Rect::ZERO,
+            full_area: Rect::ZERO,
+            frame_alpha: 0.0,
             drag_vel: V2D::null(),
             selection: Vec::new(),
             hover_idx: None,
+        }
+    }
+
+    // Gets the workable area the model will be seen in.
+    pub fn area_rect(&mut self, ui: &Ui, phz: &PhyzzySimulator) {
+        self.full_area = ui.max_rect();
+        let (scaled_area, scale) = phz.area_to_rect(self.full_area);
+        self.scale = scale;
+
+        let center_offset = Vec2::new(
+            (self.full_area.width() - scaled_area.x) / 2.0,
+            (self.full_area.height() - scaled_area.y) / 2.0,
+        );
+        let centered_min = self.full_area.min + center_offset;
+        self.centered_rect = Rect::from_min_size(centered_min, scaled_area);
+
+    }
+
+    // Converts the internal world coordinate to a drawable coordinate in the viewport.
+    pub fn world_to_panel(&self, phz_coord: &V2D) -> Pos2 {
+        // Function arranged for clarity on transformation matrix being used.
+        let panel_coord = phz_coord.tf_fit(
+            self.scale as f64,                   self.centered_rect.max.y as f64,
+            self.centered_rect.min.x as f64, -self.scale as f64);
+
+        Pos2::new(panel_coord.x as f32, panel_coord.y as f32)
+    }
+
+    // In charge of drawing the model and viewport across the entire given area.
+    pub fn draw(&self, ui: &Ui, phz: &PhyzzySimulator, alpha: f64) {
+        // Draws the viewport.
+        let outer_color = Color32::from_gray(0);
+        let centered_color = Color32::from_gray(16);
+        let no_radius = CornerRadiusF32::same(0.0);
+        let painter = ui.painter_at(self.centered_rect);
+        ui.painter().rect_filled(self.full_area, no_radius, outer_color);
+        painter.rect_filled(self.centered_rect, no_radius, centered_color);
+
+        // Draw model from here.
+
+        // Draw springs first
+        let spring_color = Color32::from_gray(255);
+        let stroke = Stroke::new(1.0, spring_color);
+        for spring in phz.model.get_springs() {
+            let mass_a = phz.model.get_mass(spring.get_ma());
+            let mass_b = phz.model.get_mass(spring.get_mb());
+
+            let (pos_a, pos_b) = if !phz.paused {
+                (self.world_to_panel(&mass_a.approx_pos(alpha)),
+                 self.world_to_panel(&mass_b.approx_pos(alpha)))
+            } else {
+                (self.world_to_panel(&mass_a.p_i), self.world_to_panel(&mass_b.p_i))
+            };
+
+            painter.line_segment([pos_a, pos_b], stroke);
+        }
+
+        // Draw masses
+        let mass_color = Color32::from_rgb(29, 179, 34);
+
+        for mass in phz.model.get_masses() {
+
+            // Ignoring approximation on pause prevents jitter.
+            let pos = if !phz.paused {
+                let aprox_render = mass.approx_pos(alpha);
+                self.world_to_panel(&aprox_render)
+
+            } else {
+                self.world_to_panel(&mass.p_i)
+            };
+
+            let rad = mass.r as f32 * self.scale;
+
+            painter.circle_filled(pos, rad, mass_color);
         }
     }
 

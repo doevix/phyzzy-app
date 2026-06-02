@@ -128,26 +128,28 @@ impl eframe::App for PhyzzyApp {
             self.phz.t_now = Instant::now();
 
             // Setup painter.
-            let full_area = ui.max_rect();
-            let (scaled_area, scale) = self.phz.area_to_rect(full_area);
-            self.phz.scaling = scale as f64;
+            self.interact.area_rect(&ui, &self.phz);
+            // let full_area = ui.max_rect();
+            // let (scaled_area, scale) = self.phz.area_to_rect(full_area);
+            // self.phz.scaling = scale as f64;
+            //
+            // // Center the viewer.
+            // let center_offset = Vec2::new(
+            //     (full_area.width() - scaled_area.x) * 0.5,
+            //     (full_area.height() - scaled_area.y) * 0.5,
+            // );
+            // let centered_min = full_area.min + center_offset;
+            // let centered_rect = Rect::from_min_size(centered_min, scaled_area);
+            //
+            // let painter = ui.painter_at(centered_rect);
+            // self.phz.screen_rect = centered_rect;
 
-            // Center the viewer.
-            let center_offset = Vec2::new(
-                (full_area.width() - scaled_area.x) * 0.5,
-                (full_area.height() - scaled_area.y) * 0.5,
-            );
-            let centered_min = full_area.min + center_offset;
-            let centered_rect = Rect::from_min_size(centered_min, scaled_area);
-            let painter = ui.painter_at(centered_rect);
-            self.phz.screen_rect = centered_rect;
-
-            let response = ui.allocate_rect(centered_rect, Sense::click_and_drag());
+            // let response = ui.allocate_rect(centered_rect, Sense::click_and_drag());
 
             // User interaction.
             // self.user_interact(&response);
-            self.interact.user_hover(&response, &self.phz);
-            self.interact.user_single_select(&response, &self.phz);
+            // self.interact.user_hover(&response, &self.phz);
+            // self.interact.user_single_select(&response, &self.phz);
 
             // Update model.
             let mut acc = self.phz.last_frame;
@@ -159,12 +161,14 @@ impl eframe::App for PhyzzyApp {
 
             // Draw the background.
             ui.request_repaint();
-            let no_radius = CornerRadiusF32::same(0.0);
-            ui.painter().rect_filled(full_area, no_radius, Color32::from_gray(0));
-            painter.rect_filled(self.phz.screen_rect, no_radius, Color32::from_gray(16));
+
+            self.interact.draw(&ui, &self.phz, alpha);
+            // let no_radius = CornerRadiusF32::same(0.0);
+            // ui.painter().rect_filled(full_area, no_radius, Color32::from_gray(0));
+            // painter.rect_filled(self.phz.screen_rect, no_radius, Color32::from_gray(16));
 
             // Draw the model.
-            self.draw_model(&painter, alpha, &self.interact.hover_idx, &self.interact.selection);
+            // self.draw_model(&painter, alpha, &self.interact.hover_idx, &self.interact.selection);
         });
     }
 }
