@@ -86,16 +86,16 @@ impl PhyzzyViewport{
     }
 
     // In charge of drawing the model and viewport across the entire given area.
-    pub fn draw(&self, ui: &Ui, phz: &PhyzzySimulator, alpha: f64) {
-        // Draws the viewport.
+    pub fn draw_view(&self, ui: &Ui) {
         let outer_color = Color32::from_gray(0);
         let centered_color = Color32::from_gray(16);
         let no_radius = CornerRadiusF32::same(0.0);
-        let painter = ui.painter_at(self.centered_rect);
-        ui.painter().rect_filled(self.full_area, no_radius, outer_color);
-        painter.rect_filled(self.centered_rect, no_radius, centered_color);
 
-        // Draw model from here.
+        ui.painter().rect_filled(self.full_area, no_radius, outer_color);
+        ui.painter().rect_filled(self.centered_rect, no_radius, centered_color);
+    }
+    pub fn draw_model(&self, ui: &Ui, phz: &PhyzzySimulator, alpha: f64) {
+        let painter = ui.painter_at(self.centered_rect);
 
         // Draw springs first
         let spring_color = Color32::from_gray(255);

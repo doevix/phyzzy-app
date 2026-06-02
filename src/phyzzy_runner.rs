@@ -164,7 +164,8 @@ impl eframe::App for PhyzzyApp {
             ui.request_repaint();
 
             // Draw the model.
-            self.viewport.draw(&ui, &self.phz, alpha);
+            self.viewport.draw_view(&ui);
+            self.viewport.draw_model(&ui, &self.phz, alpha);
             self.viewport.draw_interaction(&ui, &self.phz, alpha);
         });
     }
