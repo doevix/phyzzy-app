@@ -40,7 +40,7 @@ impl PhyzzyApp {
             "wave",
             PlotPoints::from_parametric_callback(move |t|
             (0.5 * (1.0 + self.phz.model.wave_amplitude * (t + self.phz.model.angle).sin()), t),
-            0.0..TAU,
+            0.0..(TAU + 0.5), // The extra 0.5 is to ensure the wave line makes it to the other side of the plot.
             64))
             .color(Color32::from_rgb(29, 179, 34))
             .style(LineStyle::Solid)
@@ -48,14 +48,7 @@ impl PhyzzyApp {
 }
 impl eframe::App for PhyzzyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        egui::Panel::left("sim_settings_panel")
-        .resizable(true)
-        .min_size(150.0)
-        .max_size(180.0)
-        .show_inside(ui, |ui| {
-            ui.heading(&self.phz.model_meta.name);
-            let creator_string = format!("by {}", self.phz.model_meta.creator);
-            ui.label(creator_string);
+        egui::Panel::top("toolbar").show_inside(ui, |ui| {
             ui.horizontal(|ui| {
                 if ui.button("Pause").clicked() {
                     self.phz.paused = !self.phz.paused;
@@ -67,7 +60,12 @@ impl eframe::App for PhyzzyApp {
                     self.phz.model.toggle_g();
                 }
             });
-
+        });
+        egui::Panel::left("sim_settings_panel")
+        .resizable(true)
+        .min_size(150.0)
+        .max_size(180.0)
+        .show_inside(ui, |ui| {
             // Show the muscle waveform.
             let plot = Plot::new("Wavebox")
                 .allow_zoom(false)
