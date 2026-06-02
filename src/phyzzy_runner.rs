@@ -1,6 +1,5 @@
 use phyzzy_rs::{ self, V2D };
-use eframe::{ egui::{ self, Color32, Pos2, Rect, Response, Sense, Slider, Vec2, Painter }, epaint::{ CornerRadiusF32, Stroke, }
-};
+use eframe::egui::{ self, Color32, Pos2, Vec2, Slider, Sense };
 use egui_plot::{ self, Line, LineStyle, Plot, PlotPoints };
 use core::f64;
 use std::{f64::consts::TAU, time::Instant};
@@ -104,21 +103,37 @@ impl eframe::App for PhyzzyApp {
             });
 
             // Show properties of a selected mass.
-            if let Some(idx) = self.sel_idx {
-                let f_mass_idx = format!("Selected: Mass {}", idx);
-                ui.heading(f_mass_idx);
-                let mass = self.phz.model.get_mass(idx);
-                let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
-                ui.label(f_mass_props);
+            if let Some(idx) = &self.viewport.select_idx {
+                match &idx {
+                    PhyzzyObject::Mass(o_idx) => {
+                        let f_mass_idx = format!("Selected: Mass {}", o_idx);
+                        ui.heading(f_mass_idx);
+                        let mass = self.phz.model.get_mass(*o_idx);
+                        let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
+                        ui.label(f_mass_props);
+                    },
+                    PhyzzyObject::Spring(_o_idx) => {},
+
+                }
             }
 
+            let sel_check = format!("{:?}", self.viewport.select_idx);
+            ui.label(sel_check);
+            let drag_check = format!("{:?}", self.viewport.drag_idx);
+            ui.label(drag_check);
+
             // Show properties of a hovered mass.
-            if let Some(idx) = self.mass_idx {
-                let f_mass_idx = format!("Mass {}", idx);
-                ui.heading(f_mass_idx);
-                let mass = self.phz.model.get_mass(idx);
-                let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
-                ui.label(f_mass_props);
+            if let Some(idx) = &self.viewport.hover_idx {
+                match &idx {
+                    PhyzzyObject::Mass(o_idx) => {
+                        let f_mass_idx = format!("Mass {}", o_idx);
+                        ui.heading(f_mass_idx);
+                        let mass = self.phz.model.get_mass(*o_idx);
+                        let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
+                        ui.label(f_mass_props);
+                    },
+                    PhyzzyObject::Spring(_o_idx) => {},
+                }
             }
         });
         egui::CentralPanel::default().show_inside(ui, |ui| {
@@ -132,10 +147,10 @@ impl eframe::App for PhyzzyApp {
 
 
             // User interaction.
-            // let response = ui.allocate_rect(centered_rect, Sense::click_and_drag());
+            let response = ui.allocate_rect(self.viewport.centered_rect, Sense::click_and_drag());
             // self.user_interact(&response);
-            // self.interact.user_hover(&response, &self.phz);
-            // self.interact.user_single_select(&response, &self.phz);
+            self.viewport.user_hover(&response, &self.phz);
+            self.viewport.user_single_interact(&response, &mut self.phz);
 
             // Update model.
             let mut acc = self.phz.last_frame;
@@ -150,6 +165,7 @@ impl eframe::App for PhyzzyApp {
 
             // Draw the model.
             self.viewport.draw(&ui, &self.phz, alpha);
+            self.viewport.draw_interaction(&ui, &self.phz, alpha);
         });
     }
 }
