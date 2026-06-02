@@ -2,6 +2,7 @@ pub mod phyzzy_io;
 pub mod phyzzy_runner;
 pub mod phyzzy_sim;
 pub mod phyzzy_viewport;
+pub mod phyzzy_wavebox;
 
 use eframe::egui::{ Pos2, Rect };
 use std::time::Instant;

@@ -1,15 +1,15 @@
 use phyzzy_rs::{ self, V2D };
-use eframe::egui::{ self, Color32, Pos2, Vec2, Slider, Sense };
-use egui_plot::{ self, Line, LineStyle, Plot, PlotPoints };
-use core::f64;
-use std::{f64::consts::TAU, time::Instant};
+use eframe::egui::{ self, Pos2, Vec2, Slider, Sense };
+use std::{ time::Instant };
 
 use crate::phyzzy_sim::PhyzzySimulator;
 use crate::phyzzy_viewport::{ PhyzzyViewport, PhyzzyObject };
+use crate::phyzzy_wavebox::PhyzzyWavebox;
 
 pub struct PhyzzyApp {
     pub phz: PhyzzySimulator,
     pub viewport: PhyzzyViewport,
+    pub wavebox: PhyzzyWavebox,
     pub pointer_pos: Option<Pos2>,
     pub pointer_interact_pos: Option<Pos2>,
     pub pointer_drag_delta: Vec2,
@@ -25,6 +25,7 @@ impl PhyzzyApp {
         Self {
             phz,
             viewport: PhyzzyViewport::init(),
+            wavebox: PhyzzyWavebox::init(),
             pointer_pos: None,
             pointer_interact_pos: None,
             pointer_drag_delta: Vec2::new(0.0, 0.0),
@@ -33,17 +34,6 @@ impl PhyzzyApp {
             held_idx: None,
             sel_idx: None,
         }
-    }
-
-    pub fn wave(&self) -> Line<'_> {
-        Line::new(
-            "wave",
-            PlotPoints::from_parametric_callback(move |t|
-            (0.5 * (1.0 + self.phz.model.wave_amplitude * (t + self.phz.model.angle).sin()), t),
-            0.0..(TAU + 0.5), // The extra 0.5 is to ensure the wave line makes it to the other side of the plot.
-            64))
-            .color(Color32::from_rgb(29, 179, 34))
-            .style(LineStyle::Solid)
     }
 }
 impl eframe::App for PhyzzyApp {
@@ -67,26 +57,7 @@ impl eframe::App for PhyzzyApp {
         .max_size(180.0)
         .show_inside(ui, |ui| {
             // Show the muscle waveform.
-            let plot = Plot::new("Wavebox")
-                .allow_zoom(false)
-                .allow_axis_zoom_drag(false)
-                .allow_scroll(false)
-                .allow_drag(false)
-                .include_x(0.0)
-                .include_x(1.0)
-                .set_margin_fraction(Vec2::ZERO)
-                .show(ui, |plot_ui| {
-                    plot_ui.set_plot_bounds(egui_plot::PlotBounds::from_min_max([0.0, 0.0], [1.0, TAU]));
-                plot_ui.line(self.wave());
-            });
-
-            // Adjust the wave amplitude by dragging along the x axis.
-            if plot.response.dragged() {
-                let x_delta = plot.response.drag_delta().x as f64;
-                let p_width = plot.response.rect.width()as f64;
-                self.phz.model.wave_amplitude = (self.phz.model.wave_amplitude + x_delta / p_width).clamp(0.0, 1.0);
-            }
-
+            self.wavebox.show(ui, &mut self.phz);
         });
         egui::Panel::right("properties_panel")
         .resizable(true)
