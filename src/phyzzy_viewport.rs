@@ -1,4 +1,4 @@
-use eframe::{egui::{ Color32, Pos2, Response, Stroke, Ui, Vec2 }, egui_wgpu::winit::Painter, epaint::{ CornerRadiusF32, Rect }};
+use eframe::{egui::{ Color32, Pos2, Response, Stroke, Ui, Vec2 }, epaint::{ CornerRadiusF32, Rect }};
 use phyzzy_rs::V2D;
 
 use crate::phyzzy_sim::PhyzzySimulator;
