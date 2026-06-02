@@ -204,6 +204,7 @@ impl PhyzzyViewport{
                         match obj {
                             PhyzzyObject::Mass(idx) => {
                                 phz.model.release_mass(idx);
+                                phz.model.set_mass_vel(idx, self.drag_vel, phz.dt);
                             },
                             PhyzzyObject::Spring(_idx) => {},
                         }
@@ -216,7 +217,10 @@ impl PhyzzyViewport{
                             let drag_delta = response.drag_delta();
                             let vel = V2D::new(drag_delta.x as f64 / self.scale as f64,
                                                -drag_delta.y as f64 / self.scale as f64) / phz.last_frame;
-                            phz.model.set_mass_vel(*idx, vel, phz.dt);
+
+                            let m_new_pos = phz.model.get_mass(*idx).p_i + vel * phz.last_frame;
+                            phz.model.set_mass_pos(*idx, m_new_pos);
+                            self.drag_vel = if !phz.paused { vel } else { V2D::null() };
                         },
                         PhyzzyObject::Spring(_idx) => {},
                     }
