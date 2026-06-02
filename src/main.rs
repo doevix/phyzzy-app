@@ -1,7 +1,7 @@
 pub mod phyzzy_io;
 pub mod phyzzy_runner;
 pub mod phyzzy_sim;
-pub mod phyzzy_interact;
+pub mod phyzzy_viewport;
 
 use eframe::egui::{ Pos2, Rect };
 use std::time::Instant;
@@ -15,7 +15,7 @@ const FIXED_DT: f64 = 0.001;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-    let filename = String::from("models/blob_thing.json");
+    let filename = String::from("models/shapes.json");
 
     let import_result = PhyzzyIO::import(&filename, FIXED_DT);
     let phz = match import_result {
