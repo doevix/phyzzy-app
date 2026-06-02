@@ -10,7 +10,7 @@ use crate::phyzzy_viewport::{ PhyzzyViewport, PhyzzyObject };
 
 pub struct PhyzzyApp {
     pub phz: PhyzzySimulator,
-    pub interact: PhyzzyViewport,
+    pub viewport: PhyzzyViewport,
     pub pointer_pos: Option<Pos2>,
     pub pointer_interact_pos: Option<Pos2>,
     pub pointer_drag_delta: Vec2,
@@ -25,7 +25,7 @@ impl PhyzzyApp {
     pub fn new(_cc: &eframe::CreationContext<'_>, phz: PhyzzySimulator) -> Self {
         Self {
             phz,
-            interact: PhyzzyViewport::init(),
+            viewport: PhyzzyViewport::init(),
             pointer_pos: None,
             pointer_interact_pos: None,
             pointer_drag_delta: Vec2::new(0.0, 0.0),
@@ -128,7 +128,7 @@ impl eframe::App for PhyzzyApp {
             self.phz.t_now = Instant::now();
 
             // Setup painter.
-            self.interact.area_rect(&ui, &self.phz);
+            self.viewport.viewer_area(&ui, &self.phz);
 
 
             // User interaction.
@@ -149,125 +149,124 @@ impl eframe::App for PhyzzyApp {
             ui.request_repaint();
 
             // Draw the model.
-            self.interact.draw(&ui, &self.phz, alpha);
+            self.viewport.draw(&ui, &self.phz, alpha);
         });
     }
 }
 
 impl PhyzzyApp {
-    // TODO: Decide whether to move this over to phyzzy_runner
-    pub fn user_interact(&mut self, response: &Response) {
-        match response.hover_pos() {
-            Some(pos) => {
-                self.pointer_pos = Some(pos);
-                let mut m_idx: Option<usize> = None;
-                for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
-                    let bound_rad = ((mass.r * self.phz.scaling) + 10.0) as f32;
-                    let mass_pos = self.phz.world_to_panel(&mass.p_i);
-
-                    if (pos - mass_pos).length() < bound_rad {
-                        m_idx = Some(idx);
-                        break;
-                    }
-                }
-
-                self.mass_idx = m_idx;
-                m_idx
-            },
-            None => {
-                self.pointer_pos = None;
-                self.mass_idx = None;
-                None
-            }
-        };
-
-        if response.clicked() {
-            if let Some(pos) = response.interact_pointer_pos() {
-
-                let m_idx = self.phz.model.get_masses().iter().position(|mass| {
-                    let bound_rad = ((mass.r * self.phz.scaling) + 10.0) as f32;
-                    let mass_pos = self.phz.world_to_panel(&mass.p_i);
-
-                    (pos - mass_pos).length() < bound_rad
-                });
-
-                self.sel_idx = m_idx;
-            }
-        }
-
-        match response.interact_pointer_pos() {
-            Some(pos) => {
-                self.pointer_interact_pos = Some(pos);
-
-                // Find the mass that's being clicked on.
-                let mut m_idx: Option<usize> = None;
-                for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
-                    let bound_rad = ((mass.r * self.phz.scaling) + 10.0) as f32;
-                    let mass_pos = self.phz.world_to_panel(&mass.p_i);
-
-                    if (pos - mass_pos).length() < bound_rad {
-                        m_idx = Some(idx);
-                        break;
-                    }
-                }
-
-                // If a mass was found for interaction.
-                if let Some(idx) = m_idx {
-                    // If the mass was already being used for interaction.
-                    match self.held_idx {
-                        None => {
-                            self.held_idx = m_idx;
-                            // self.drag_vel = V2D::null();
-                            self.phz.model.hold_mass(idx);
-                        },
-                        Some(_) => {},
-                    }
-                }
-            },
-            None => {
-                self.pointer_interact_pos = None;
-                if let Some(idx) = self.held_idx {
-                    self.phz.model.release_mass(idx);
-                    self.held_idx = None;
-                    self.drag_vel = V2D::null();
-                }
-            }
-        };
-
-        self.pointer_drag_delta = response.drag_delta();
-
-        if response.dragged() {
-            if let (Some(idx), Some(cursor)) = (self.held_idx, response.interact_pointer_pos()) {
-                let p_x = (cursor.x as f64 - self.phz.screen_rect.min.x as f64) / self.phz.scaling;
-                let p_y = (self.phz.screen_rect.max.y as f64 - cursor.y as f64) / self.phz.scaling;
-                let target = V2D::new(p_x, p_y);
-
-                self.phz.model.set_mass_pos(idx, target);
-
-                let drag_delta = response.drag_delta();
-                let frame_vel = V2D::new(
-                    drag_delta.x as f64 / self.phz.scaling,
-                    -drag_delta.y as f64 / self.phz.scaling
-                ) / self.phz.last_frame;
-
-                // Since the drag velocity gets lost on release, hold on to last non-stopped drag vel.
-                if !self.phz.paused {
-                    if !response.drag_stopped() { self.drag_vel = frame_vel; }
-                } else {
-                    self.drag_vel = V2D::null();
-                }
-            }
-        }
-
-        if response.drag_stopped() {
-            if let Some(idx) = self.held_idx {
-                self.phz.model.set_mass_vel(idx, self.drag_vel, self.phz.dt);
-                self.phz.model.release_mass(idx);
-                self.held_idx = None;
-                self.drag_vel = V2D::null();
-            }
-        }
-    }
+    // pub fn user_interact(&mut self, response: &Response) {
+    //     match response.hover_pos() {
+    //         Some(pos) => {
+    //             self.pointer_pos = Some(pos);
+    //             let mut m_idx: Option<usize> = None;
+    //             for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
+    //                 let bound_rad = ((mass.r * self.phz.scaling) + 10.0) as f32;
+    //                 let mass_pos = self.phz.world_to_panel(&mass.p_i);
+    //
+    //                 if (pos - mass_pos).length() < bound_rad {
+    //                     m_idx = Some(idx);
+    //                     break;
+    //                 }
+    //             }
+    //
+    //             self.mass_idx = m_idx;
+    //             m_idx
+    //         },
+    //         None => {
+    //             self.pointer_pos = None;
+    //             self.mass_idx = None;
+    //             None
+    //         }
+    //     };
+    //
+    //     if response.clicked() {
+    //         if let Some(pos) = response.interact_pointer_pos() {
+    //
+    //             let m_idx = self.phz.model.get_masses().iter().position(|mass| {
+    //                 let bound_rad = ((mass.r * self.phz.scaling) + 10.0) as f32;
+    //                 let mass_pos = self.phz.world_to_panel(&mass.p_i);
+    //
+    //                 (pos - mass_pos).length() < bound_rad
+    //             });
+    //
+    //             self.sel_idx = m_idx;
+    //         }
+    //     }
+    //
+    //     match response.interact_pointer_pos() {
+    //         Some(pos) => {
+    //             self.pointer_interact_pos = Some(pos);
+    //
+    //             // Find the mass that's being clicked on.
+    //             let mut m_idx: Option<usize> = None;
+    //             for (idx, mass) in self.phz.model.get_masses().iter().enumerate() {
+    //                 let bound_rad = ((mass.r * self.phz.scaling) + 10.0) as f32;
+    //                 let mass_pos = self.phz.world_to_panel(&mass.p_i);
+    //
+    //                 if (pos - mass_pos).length() < bound_rad {
+    //                     m_idx = Some(idx);
+    //                     break;
+    //                 }
+    //             }
+    //
+    //             // If a mass was found for interaction.
+    //             if let Some(idx) = m_idx {
+    //                 // If the mass was already being used for interaction.
+    //                 match self.held_idx {
+    //                     None => {
+    //                         self.held_idx = m_idx;
+    //                         // self.drag_vel = V2D::null();
+    //                         self.phz.model.hold_mass(idx);
+    //                     },
+    //                     Some(_) => {},
+    //                 }
+    //             }
+    //         },
+    //         None => {
+    //             self.pointer_interact_pos = None;
+    //             if let Some(idx) = self.held_idx {
+    //                 self.phz.model.release_mass(idx);
+    //                 self.held_idx = None;
+    //                 self.drag_vel = V2D::null();
+    //             }
+    //         }
+    //     };
+    //
+    //     self.pointer_drag_delta = response.drag_delta();
+    //
+    //     if response.dragged() {
+    //         if let (Some(idx), Some(cursor)) = (self.held_idx, response.interact_pointer_pos()) {
+    //             let p_x = (cursor.x as f64 - self.phz.screen_rect.min.x as f64) / self.phz.scaling;
+    //             let p_y = (self.phz.screen_rect.max.y as f64 - cursor.y as f64) / self.phz.scaling;
+    //             let target = V2D::new(p_x, p_y);
+    //
+    //             self.phz.model.set_mass_pos(idx, target);
+    //
+    //             let drag_delta = response.drag_delta();
+    //             let frame_vel = V2D::new(
+    //                 drag_delta.x as f64 / self.phz.scaling,
+    //                 -drag_delta.y as f64 / self.phz.scaling
+    //             ) / self.phz.last_frame;
+    //
+    //             // Since the drag velocity gets lost on release, hold on to last non-stopped drag vel.
+    //             if !self.phz.paused {
+    //                 if !response.drag_stopped() { self.drag_vel = frame_vel; }
+    //             } else {
+    //                 self.drag_vel = V2D::null();
+    //             }
+    //         }
+    //     }
+    //
+    //     if response.drag_stopped() {
+    //         if let Some(idx) = self.held_idx {
+    //             self.phz.model.set_mass_vel(idx, self.drag_vel, self.phz.dt);
+    //             self.phz.model.release_mass(idx);
+    //             self.held_idx = None;
+    //             self.drag_vel = V2D::null();
+    //         }
+    //     }
+    // }
 }
 
 

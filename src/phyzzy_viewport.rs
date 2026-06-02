@@ -32,10 +32,35 @@ impl PhyzzyViewport{
         }
     }
 
+    pub fn area_to_rect(&self, phz: &PhyzzySimulator, rect: Rect) -> (Vec2, f32) {
+        let rect_sz = rect.size();
+        let world_sz = Vec2::new(phz.world.area_sz.x as f32, phz.world.area_sz.y as f32);
+
+        if world_sz.x > world_sz.y {
+            let scale = rect_sz.x / world_sz.x;
+            // Clamp vertical size if it gets bigger than the window's.
+            if world_sz.y * scale > rect_sz.y {
+                let s = rect_sz.y / world_sz.y;
+                return (Vec2::new(world_sz.x * s, rect_sz.y), s);
+            }
+
+            (Vec2::new(rect_sz.x, world_sz.y * scale), scale)
+        } else {
+            let scale = rect_sz.y / world_sz.y;
+            // Clamp horizontal size if it gets bigger than the window's
+            if world_sz.x * scale > rect_sz.x {
+                let s = rect_sz.x / world_sz.x;
+                return (Vec2::new(rect_sz.x, world_sz.y * s), s);
+            }
+
+            (Vec2::new(world_sz.x * scale, rect_sz.y), scale)
+        }
+    }
+
     // Gets the workable area the model will be seen in.
-    pub fn area_rect(&mut self, ui: &Ui, phz: &PhyzzySimulator) {
+    pub fn viewer_area(&mut self, ui: &Ui, phz: &PhyzzySimulator) {
         self.full_area = ui.max_rect();
-        let (scaled_area, scale) = phz.area_to_rect(self.full_area);
+        let (scaled_area, scale) = self.area_to_rect(&phz, self.full_area);
         self.scale = scale;
 
         let center_offset = Vec2::new(
@@ -111,7 +136,7 @@ impl PhyzzyViewport{
         self.hover_idx = match response.hover_pos() {
             Some(hover_coord) => {
                 let m_idx = phz.model.get_masses().iter().position(|mass| {
-                    let mass_panel_pos = phz.world_to_panel(&mass.p_i);
+                    let mass_panel_pos = self.world_to_panel(&mass.p_i);
                     let rad_detect = (mass.r * phz.scaling + 5.0) as f32;
                     (hover_coord - mass_panel_pos).length() <= rad_detect
                 });
@@ -129,7 +154,7 @@ impl PhyzzyViewport{
             // Detect if user is holding down the mouse over a mass.
             Some(interact_coord) => {
                 let m_idx = phz.model.get_masses().iter().position(|mass| {
-                    let mass_panel_pos = phz.world_to_panel(&mass.p_i);
+                    let mass_panel_pos = self.world_to_panel(&mass.p_i);
                     let rad_detect = (mass.r * phz.scaling + 5.0) as f32;
                     (interact_coord - mass_panel_pos).length() <= rad_detect
                 });
