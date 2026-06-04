@@ -105,11 +105,15 @@ impl PhyzzyViewport{
             let mass_b = phz.model.get_mass(spring.get_mb());
 
             // Ignoring approximation on pause prevents jitter.
-            let (pos_a, pos_b) = if !phz.paused {
-                (self.world_to_panel(&mass_a.approx_pos(alpha)),
-                 self.world_to_panel(&mass_b.approx_pos(alpha)))
+            let pos_a = if !phz.paused && !mass_a.fixed {
+                self.world_to_panel(&mass_a.approx_pos(alpha))
             } else {
-                (self.world_to_panel(&mass_a.p_i), self.world_to_panel(&mass_b.p_i))
+                self.world_to_panel(&mass_a.p_i)
+            };
+            let pos_b = if !phz.paused && !mass_b.fixed {
+                self.world_to_panel(&mass_b.approx_pos(alpha))
+            } else {
+                self.world_to_panel(&mass_b.p_i)
             };
 
             painter.line_segment([pos_a, pos_b], stroke);
@@ -121,7 +125,7 @@ impl PhyzzyViewport{
         for mass in phz.model.get_masses() {
 
             // Ignoring approximation on pause prevents jitter.
-            let pos = if !phz.paused {
+            let pos = if !phz.paused && !mass.fixed {
                 let aprox_render = mass.approx_pos(alpha);
                 self.world_to_panel(&aprox_render)
 
@@ -141,10 +145,11 @@ impl PhyzzyViewport{
         if let Some(phz_idx) = &self.hover_idx {
             match phz_idx {
                 PhyzzyObject::Mass(idx) => {
-                    let pos = if !phz.paused {
-                        self.world_to_panel(&phz.model.get_mass(*idx).approx_pos(alpha))
+                    let mass = phz.model.get_mass(*idx);
+                    let pos = if !phz.paused && !mass.fixed{
+                        self.world_to_panel(&mass.approx_pos(alpha))
                     } else {
-                        self.world_to_panel(&phz.model.get_mass(*idx).p_i)
+                        self.world_to_panel(&mass.p_i)
                     };
                     let rad = phz.model.get_mass(*idx).r as f32 * self.scale + 5.0;
                     painter.circle_stroke(pos, rad, Stroke::new(1.0, Color32::from_gray(255)));

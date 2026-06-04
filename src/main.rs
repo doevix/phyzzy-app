@@ -39,6 +39,7 @@ fn main() {
         },
         Err(_) => PhyzzySimulator::new(),
     };
+
     // Run the model
     let _ = eframe::run_native("Phyzzy", native_options, Box::new(|cc| Ok(Box::new(PhyzzyApp::new(cc, phz)))));
 }
