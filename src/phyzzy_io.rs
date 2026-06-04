@@ -93,6 +93,16 @@ impl PhyzzyIO {
                     elements.model.new_bladder(bladder_type, bladder.mass, bladder.phase, bladder.sense, bladder.multiplier);
                 }
 
+                for (idx, layer) in loaded_data.model.collision_layers.iter().enumerate() {
+                    elements.model.new_collision_layer();
+                    for mass in &layer.masses {
+                        elements.model.mass_to_collision_layer(idx, *mass);
+                    }
+                    for spring in &layer.springs {
+                        elements.model.mass_to_collision_layer(idx, *spring);
+                    }
+                }
+
                 for bound in loaded_data.world.bounds {
                     let pos = V2D::new(bound.pos.x, bound.pos.y);
                     let nrm = V2D::new(bound.nrm.x, bound.nrm.y);

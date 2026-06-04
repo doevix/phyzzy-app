@@ -73,6 +73,19 @@
                 "pos": { "x": 4.0, "y": 7.0},
                 "vel": { "x": 0.0, "y": 0.0 }
 
+            },
+
+            {
+                "mass": 0.16,
+                "radius": 0.5,
+                "pos": { "x": 5.0, "y": 1.0},
+                "vel": { "x": 0.0, "y": 0.0 }
+            },
+            {
+                "mass": 0.16,
+                "radius": 0.5,
+                "pos": { "x": 3.0, "y": 1.0},
+                "vel": { "x": 0.0, "y": 0.0 }
             }
         ],
         "springs": [
@@ -151,7 +164,13 @@
 
         ],
         "muscles": [],
-        "bladders": []
+        "bladders": [],
+        "collision_layers": [
+            {
+                "masses": [10, 11],
+                "springs": []
+            }
+        ]
     },
     "world": {
         "area_sz": { "x": 12.0, "y": 7.5 },
