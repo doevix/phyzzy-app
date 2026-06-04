@@ -18,7 +18,8 @@
         ],
         "springs": [],
         "muscles": [],
-        "bladders": []
+        "bladders": [],
+        "collision_layers": []
     },
     "world": {
         "area_sz": {"x": 12.0, "y": 7.5 },
