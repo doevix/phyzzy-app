@@ -99,7 +99,7 @@ impl PhyzzyIO {
                         elements.model.mass_to_collision_layer(idx, *mass);
                     }
                     for spring in &layer.springs {
-                        elements.model.mass_to_collision_layer(idx, *spring);
+                        elements.model.spring_to_collision_layer(idx, *spring);
                     }
                 }
 
