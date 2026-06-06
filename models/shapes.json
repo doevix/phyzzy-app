@@ -6,7 +6,7 @@
     },
     "model": {
         "wave_speed": 5.0,
-        "wave_amplitude": 1.0,
+        "wave_amplitude": 0.5,
         "angle": 0.0,
         "masses": [
             {
@@ -73,6 +73,19 @@
                 "pos": { "x": 4.0, "y": 7.0},
                 "vel": { "x": 0.0, "y": 0.0 }
 
+            },
+
+            {
+                "mass": 0.16,
+                "radius": 0.25,
+                "pos": { "x": 5.0, "y": 1.0},
+                "vel": { "x": 0.0, "y": 0.0 }
+            },
+            {
+                "mass": 0.16,
+                "radius": 0.25,
+                "pos": { "x": 3.0, "y": 1.0},
+                "vel": { "x": 0.0, "y": 0.0 }
             }
         ],
         "springs": [
@@ -151,7 +164,13 @@
 
         ],
         "muscles": [],
-        "bladders": []
+        "bladders": [],
+        "collision_layers": [
+            {
+                "masses": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "springs": [0, 1, 2, 3, 4, 5, 6, 9]
+            }
+        ]
     },
     "world": {
         "area_sz": { "x": 12.0, "y": 7.5 },

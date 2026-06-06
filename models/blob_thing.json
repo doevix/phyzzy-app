@@ -74,6 +74,12 @@
                 "multiplier": 10.0,
                 "mass": 2
             }
+        ],
+        "collision_layers": [
+            {
+                "masses": [0, 1, 2],
+                "springs": []
+            }
         ]
     },
     "world": {
