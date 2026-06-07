@@ -1,9 +1,11 @@
 use phyzzy_rs::{ self, V2D };
-use eframe::egui::{ self, MenuBar, Pos2, Sense, Slider, Vec2 };
+use eframe::egui::{ self, MenuBar, Pos2, Sense, Slider, Vec2, Rect };
+use rfd::FileDialog;
 use std::{ time::Instant };
 
+use crate::phyzzy_io::{PhyzzyIO, PhyzzyLoaderError, PhyzzySimElements};
 use crate::phyzzy_sim::PhyzzySimulator;
-use crate::phyzzy_viewport::{ PhyzzyViewport, PhyzzyObject };
+use crate::phyzzy_viewport::{ PhyzzyViewport };
 use crate::phyzzy_wavebox::PhyzzyWavebox;
 
 pub struct PhyzzyApp {
@@ -41,6 +43,38 @@ impl eframe::App for PhyzzyApp {
         egui::Panel::top("toolbar").show_inside(ui, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("File", |ui| {
+                    if ui.button("Load").clicked() {
+                        let files = FileDialog::new()
+                            .add_filter("text", &["txt", "json"])
+                            .add_filter("json", &["txt", "json"])
+                            .pick_file();
+
+                        if let Some(file) = files {
+                            let filename = String::from(file.to_str().unwrap_or(""));
+                            let new_model = PhyzzyIO::import(&filename, self.phz.dt);
+                            match new_model {
+                                Ok(model) => {
+                                    let new_phz = PhyzzySimulator {
+                                        last_frame: 0.0,
+                                        dt: self.phz.dt,
+                                        world: model.world,
+                                        world_cfg: model.world_config,
+                                        model: model.model,
+                                        model_meta: model.meta,
+                                        scaling: 0.0,
+                                        t_now: Instant::now(),
+                                        screen_rect: Rect {
+                                            min: Pos2 { x: 0.0, y: 0.0 },
+                                            max: Pos2 { x: 0.0, y: 0.0 }
+                                        },
+                                        paused: false,
+                                    };
+                                    self.phz = new_phz;
+                                },
+                                Err(_) => {}
+                            }
+                        }
+                    }
                     if ui.button("Quit").clicked() {
                         ui.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
@@ -60,47 +94,17 @@ impl eframe::App for PhyzzyApp {
                     self.phz.model.toggle_g();
                 }
                 ui.separator();
-                ui.add(Slider::new(&mut self.phz.model.wave_speed, 0.0..=40.0).text("w"));
-                ui.add(Slider::new(&mut self.phz.world_cfg.gravity.y, 0.0..=-20.0).text("g"));
-                ui.add(Slider::new(&mut self.phz.world_cfg.drag, 0.0..=30.0).text("d"));
+                ui.add(Slider::new(&mut self.phz.model.wave_speed, 0.0..=40.0).step_by(0.1).update_while_editing(false).text("w"));
+                ui.add(Slider::new(&mut self.phz.world_cfg.gravity.y, 0.0..=-20.0).step_by(0.1).update_while_editing(false).text("g"));
+                ui.add(Slider::new(&mut self.phz.world_cfg.drag, 0.0..=30.0).step_by(0.1).update_while_editing(false).text("d"));
             });
         });
         egui::Panel::bottom("info").show_inside(ui, |ui| {
-            ui.horizontal(|ui| {
-                // Show properties of a selected mass.
-                if let Some(idx) = &self.viewport.select_idx {
-                    match &idx {
-                        PhyzzyObject::Mass(o_idx) => {
-                            let f_mass_idx = format!("Selected: Mass {}", o_idx);
-                            ui.label(f_mass_idx);
-                            let mass = self.phz.model.get_mass(*o_idx);
-                            let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
-                            ui.label(f_mass_props);
-                        },
-                        PhyzzyObject::Spring(_o_idx) => {},
-
-                    }
-                }
-
-                let sel_check = format!("{:?}", self.viewport.select_idx);
-                ui.label(sel_check);
-                let drag_check = format!("{:?}", self.viewport.drag_idx);
-                ui.label(drag_check);
-
-                // Show properties of a hovered mass.
-                if let Some(idx) = &self.viewport.hover_idx {
-                    match &idx {
-                        PhyzzyObject::Mass(o_idx) => {
-                            let f_mass_idx = format!("Mass {}", o_idx);
-                            ui.label(f_mass_idx);
-                            let mass = self.phz.model.get_mass(*o_idx);
-                            let f_mass_props = format!("mass: {}, pos: {:.3?}, vel: {:.3?}", mass.m, mass.p_i, mass.vel(self.phz.dt));
-                            ui.label(f_mass_props);
-                        },
-                        PhyzzyObject::Spring(_o_idx) => {},
-                    }
-                }
-            });
+            let str_hover = match  self.viewport.cursor_location {
+                Some(coord) => format!("({:.3}, {:.3})", coord.x, coord.y),
+                None => format!("(---, ---)"),
+            };
+            ui.label(str_hover);
         });
         egui::Panel::left("sim_settings_panel")
         .resizable(true)
@@ -112,6 +116,7 @@ impl eframe::App for PhyzzyApp {
         });
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
+
             // Get time passed.
             let t_elapsed = self.phz.t_now.elapsed();
             self.phz.last_frame = t_elapsed.as_secs_f64();

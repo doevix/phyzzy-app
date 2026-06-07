@@ -19,6 +19,7 @@ pub struct PhyzzyViewport {
     pub hover_idx: Option<PhyzzyObject>,
     pub drag_idx: Option<PhyzzyObject>,
     pub select_idx: Option<PhyzzyObject>,
+    pub cursor_location: Option<V2D>,
 }
 
 impl PhyzzyViewport{
@@ -32,6 +33,7 @@ impl PhyzzyViewport{
             hover_idx: None,
             drag_idx: None,
             select_idx: None,
+            cursor_location: None,
         }
     }
 
@@ -163,6 +165,10 @@ impl PhyzzyViewport{
     pub fn user_hover(&mut self, response: &Response, phz: &PhyzzySimulator) {
         self.hover_idx = match response.hover_pos() {
             Some(hover_coord) => {
+                self.cursor_location = Some(V2D::new(
+                    (-self.centered_rect.min.x + hover_coord.x) as f64 / self.scale as f64,
+                    (self.centered_rect.max.y - hover_coord.y) as f64 / self.scale as f64));
+
                 let m_idx = phz.model.get_masses().iter().position(|mass| {
                     let mass_panel_pos = self.world_to_panel(&mass.p_i);
                     let rad_detect = ((mass.r * self.scale as f64) + 10.0) as f32;
@@ -174,10 +180,13 @@ impl PhyzzyViewport{
                     None => None,
                 }
             },
-            None => { None },
+            None => {
+                self.cursor_location = None;
+                None
+            },
         };
     }
-    pub fn user_single_interact(&mut self, response: &Response, phz: &mut PhyzzySimulator ) {
+    pub fn user_single_interact(&mut self, response: &Response, phz: &mut PhyzzySimulator) {
         match response.interact_pointer_pos() {
             // Pointer held down
             Some(interact_coord) => {
