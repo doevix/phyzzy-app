@@ -13,7 +13,7 @@ use phyzzy_rs::{
     World,
     WorldConfig
 };
-use std::{fs, path::PathBuf};
+use std::fs;
 
 
 pub enum PhyzzyLoaderError {
