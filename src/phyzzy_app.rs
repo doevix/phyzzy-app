@@ -3,7 +3,7 @@ use eframe::egui::{ self, MenuBar, Pos2, Sense, Slider, Vec2, Rect };
 use rfd::FileDialog;
 use std::{ time::Instant };
 
-use crate::phyzzy_io::{PhyzzyIO, PhyzzyLoaderError, PhyzzySimElements};
+use crate::phyzzy_io::PhyzzyIO;
 use crate::phyzzy_sim::PhyzzySimulator;
 use crate::phyzzy_viewport::{ PhyzzyViewport };
 use crate::phyzzy_wavebox::PhyzzyWavebox;
