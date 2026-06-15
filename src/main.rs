@@ -3,6 +3,7 @@ pub mod phyzzy_app;
 pub mod phyzzy_sim;
 pub mod phyzzy_viewport;
 pub mod phyzzy_wavebox;
+pub mod phyzzy_menu;
 
 use eframe::egui::{ Pos2, Rect };
 use std::time::Instant;

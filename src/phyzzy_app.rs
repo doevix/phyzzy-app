@@ -1,5 +1,4 @@
-use phyzzy_rs::{ self, V2D };
-use eframe::egui::{ self, MenuBar, Pos2, Sense, Slider, Vec2, Rect };
+use eframe::egui::{ self, MenuBar, Pos2, Sense, Slider, Rect };
 use rfd::FileDialog;
 use std::{ time::Instant };
 
@@ -7,18 +6,13 @@ use crate::phyzzy_io::PhyzzyIO;
 use crate::phyzzy_sim::PhyzzySimulator;
 use crate::phyzzy_viewport::{ PhyzzyViewport };
 use crate::phyzzy_wavebox::PhyzzyWavebox;
+use crate::phyzzy_menu::PhyzzyMenu;
 
 pub struct PhyzzyApp {
     pub phz: PhyzzySimulator,
     pub viewport: PhyzzyViewport,
     pub wavebox: PhyzzyWavebox,
-    pub pointer_pos: Option<Pos2>,
-    pub pointer_interact_pos: Option<Pos2>,
-    pub pointer_drag_delta: Vec2,
-    pub drag_vel: V2D,
-    pub mass_idx: Option<usize>,
-    pub held_idx: Option<usize>,
-    pub sel_idx: Option<usize>,
+    pub menus: PhyzzyMenu,
 }
 
 
@@ -28,13 +22,7 @@ impl PhyzzyApp {
             phz,
             viewport: PhyzzyViewport::init(),
             wavebox: PhyzzyWavebox::init(),
-            pointer_pos: None,
-            pointer_interact_pos: None,
-            pointer_drag_delta: Vec2::new(0.0, 0.0),
-            drag_vel: V2D::null(),
-            mass_idx: None,
-            held_idx: None,
-            sel_idx: None,
+            menus: PhyzzyMenu::init(),
         }
     }
 }
@@ -100,7 +88,7 @@ impl eframe::App for PhyzzyApp {
             });
         });
         egui::Panel::bottom("info").show_inside(ui, |ui| {
-            let str_hover = match  self.viewport.cursor_location {
+            let str_hover = match self.viewport.cursor_location {
                 Some(coord) => format!("({:.3}, {:.3})", coord.x, coord.y),
                 None => format!("(---, ---)"),
             };
